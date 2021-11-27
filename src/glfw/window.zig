@@ -91,7 +91,7 @@ pub const Window = struct {
         _ = self;
         c.glfwSwapInterval(@enumToInt(mode));
     }
-
+    
     pub const VsyncMode = enum(c_int) {
         disabled = 0,
         enabled = 1,
