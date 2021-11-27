@@ -1,0 +1,3 @@
+[submodule "zalgebra"]
+	path = src/math/zalgebra
+	url = git@github.com:digitalcreature/zalgebra.git
