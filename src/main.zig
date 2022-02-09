@@ -2,7 +2,8 @@ const std = @import("std");
 const builtin = @import("builtin");
 const gl = @import("gl.zig");
 const glfw = @import("glfw.zig");
-const math = @import("math.zig");
+
+const nm = @import("nm");
 
 pub fn main() anyerror!void {
     glfw.init();

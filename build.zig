@@ -1,5 +1,8 @@
 const std = @import("std");
 
+const Pkg = std.build.Pkg;
+const FileSource = std.build.FileSource;
+
 pub fn build(b: *std.build.Builder) void {
     // Standard target options allows the person running `zig build` to choose
     // what target to build for. Here we do not override the defaults, which
@@ -18,6 +21,9 @@ pub fn build(b: *std.build.Builder) void {
 
     exe.setTarget(target);
     exe.setBuildMode(mode);
+
+    addPkgs(exe);
+
     exe.addIncludeDir("deps/inc");
     // exe.addIncludeDir("C:/Users/sam/zig-windows-x86_64-0.8.0/lib/libc/include/any-windows-any");
     // exe.addIncludeDir("C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.11.25503/include");
@@ -48,4 +54,12 @@ pub fn build(b: *std.build.Builder) void {
 
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&exe_tests.step);
+}
+
+fn addPkgs(step: *std.build.LibExeObjStep) void {
+    const nm = Pkg{
+        .name = "nm",
+        .path = FileSource.relative("src/nanpa-musi/src/nm.zig"),
+    };
+    step.addPackage(nm);
 }

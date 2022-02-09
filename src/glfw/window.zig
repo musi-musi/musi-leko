@@ -5,9 +5,9 @@ const c =@import("../c.zig");
 // usingnamespace @import("keyboard.zig");
 // usingnamespace @import("time.zig");
 
-const math = @import("../math.zig");
+const nm = @import("nm");
 
-pub const Vec2i = math.Vec2i;
+pub const Vec2i = nm.Vec2i;
 
 pub const Window = struct {
 
@@ -47,8 +47,8 @@ pub const Window = struct {
             // .keyboard = Keyboard.init(window),
             // .time = FrameTimer.init(),
             .display_mode = .windowed,
-            .windowed_pos = Vec2i.zero(),
-            .windowed_size = Vec2i.zero(),
+            .windowed_pos = Vec2i.zero,
+            .windowed_size = Vec2i.zero,
         };
         self.saveWindowedShape();
         return self;
@@ -61,7 +61,7 @@ pub const Window = struct {
     
     fn saveWindowedShape(self: *Self) void {
         var pos: Vec2i = undefined;
-        c.glfwGetWindowPos(self.handle, &pos.x, &pos.y);
+        c.glfwGetWindowPos(self.handle, &pos.v[0], &pos.v[1]);
         const size: Vec2i = self.getFrameBufferSize();
         self.windowed_pos = pos;
         self.windowed_size = size;
@@ -132,7 +132,7 @@ pub const Window = struct {
 
     pub fn getFrameBufferSize(self: Self) Vec2i {
         var frame_buffer_size: Vec2i = undefined;
-        c.glfwGetFramebufferSize(self.handle, &frame_buffer_size.x, &frame_buffer_size.y);
+        c.glfwGetFramebufferSize(self.handle, &frame_buffer_size.v[0], &frame_buffer_size.v[1]);
         return frame_buffer_size;
     }
 

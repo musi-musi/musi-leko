@@ -31,7 +31,7 @@ pub const IndexBuffer32 = IndexBuffer(u32);
 
 pub fn Buffer(comptime target: Target, comptime ElementT: type) type {
     return struct {
-        /// 
+        
         handle: c_int,
 
         pub const Element = ElementT;
@@ -60,14 +60,14 @@ pub fn Buffer(comptime target: Target, comptime ElementT: type) type {
         /// upload data, allocating enough bytes to store it, and declare usage
         /// old data is discarded, if it exists
         pub fn data(self: Self, data_slice: []const Element, usage: Usage) void {
-            const ptr = @ptrCast(*const c_void, data_slice.ptr);
+            const ptr = @ptrCast(*const anyopaque, data_slice.ptr);
             const size = @intCast(c_longlong, @sizeOf(Element) * data_slice.len);
             c.glNamedBufferData(self.handle, size, ptr, @enumToInt(usage));
         }
 
         /// replace a slice of data in the buffer. no reallocation will occur
         pub fn subData(self: Self, data_slice: []const Element, offset: usize) void {
-            const ptr = @ptrCast(*const c_void, data_slice.ptr);
+            const ptr = @ptrCast(*const anyopaque, data_slice.ptr);
             const size = @intCast(c_longlong, @sizeOf(Element) * data_slice.len);
             c.glNamedBufferSubData(self.handle, offset, size, ptr);
         }

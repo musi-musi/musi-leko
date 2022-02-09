@@ -1,3 +1,6 @@
 [submodule "zalgebra"]
 	path = src/math/zalgebra
 	url = git@github.com:digitalcreature/zalgebra.git
+[submodule "src/nanpa-musi"]
+	path = src/nanpa-musi
+	url = git@github.com:musi-musi/nanpa-musi.git
