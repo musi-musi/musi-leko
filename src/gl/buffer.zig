@@ -17,25 +17,25 @@ pub const Usage = enum(c_uint) {
     dynamic_copy = c.GL_DYNAMIC_COPY,
 };
 
-pub fn VertexBuffer(comptime ElementT: type) type {
-    return Buffer(.vertex, ElementT);
+pub fn VertexBuffer(comptime Element: type) type {
+    return Buffer(.vertex, Element);
 }
 
-pub fn IndexBuffer(comptime ElementT: type) type {
-    return Buffer(.index, ElementT);
+pub fn IndexBuffer(comptime Element: type) type {
+    return Buffer(.index, Element);
 }
 
 pub const IndexBuffer8 = IndexBuffer(u8);
 pub const IndexBuffer16 = IndexBuffer(u16);
 pub const IndexBuffer32 = IndexBuffer(u32);
 
-pub fn Buffer(comptime target: Target, comptime ElementT: type) type {
+pub fn Buffer(comptime target_: Target, comptime Element_: type) type {
     return struct {
         
         handle: c_int,
 
-        pub const Element = ElementT;
-        pub const Target = target;
+        pub const Element = Element_;
+        pub const target = target_;
 
         const Self = @This();
 
