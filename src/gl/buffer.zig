@@ -21,18 +21,29 @@ pub fn VertexBuffer(comptime Element: type) type {
     return Buffer(.vertex, Element);
 }
 
-pub fn IndexBuffer(comptime Element: type) type {
-    return Buffer(.index, Element);
+pub fn IndexBuffer(comptime index_element: IndexElement) type {
+    return Buffer(.index, index_element.Type());
 }
 
-pub const IndexBuffer8 = IndexBuffer(u8);
-pub const IndexBuffer16 = IndexBuffer(u16);
-pub const IndexBuffer32 = IndexBuffer(u32);
+pub const IndexElement = enum(c_int) {
+    ubyte = c.GL_UNSIGNED_BYTE,
+    ushort = c.GL_UNSIGNED_SHORT,
+    uint = c.GL_UNSIGNED_INT,
+
+    pub fn Type(comptime self: IndexElement) type {
+        return switch (self) {
+            .ubyte => u8,
+            .ushort => u16,
+            .uint => u32,
+        };
+    }
+
+};
 
 pub fn Buffer(comptime target_: Target, comptime Element_: type) type {
     return struct {
         
-        handle: c_int,
+        handle: c_uint,
 
         pub const Element = Element_;
         pub const target = target_;
@@ -41,7 +52,7 @@ pub fn Buffer(comptime target_: Target, comptime Element_: type) type {
 
         /// create a new buffer on the gpu
         pub fn init() Self {
-            var handle: c_int = undefined;
+            var handle: c_uint = undefined;
             c.glCreateBuffers(1, &handle);
             return Self { .handle = handle };
         }

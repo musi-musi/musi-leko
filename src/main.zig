@@ -5,16 +5,28 @@ const glfw = @import("glfw.zig");
 
 const nm = @import("nm");
 
-pub fn main() anyerror!void {
+const hello_triangle = @import("hello_triangle.zig");
+
+pub fn main() !void {
     glfw.init();
     defer glfw.deinit();
     
-    var window = glfw.Window.init(640, 360, "a toki ma!");
+    const width = 1920;
+    const height = 1080;
+
+    var window = glfw.Window.init(width, height, "a toki ma!");
     defer window.deinit();
 
     gl.init();
+    window.setVsyncMode(.enabled);
+
+    gl.viewport(0, 0, width, height);
+
+    var ht = try hello_triangle.HelloTriangle.init();
+    defer ht.deinit();
 
     while (!window.shouldClose()) {
+        ht.draw();
         window.update();
         window.swapBuffers();
     }

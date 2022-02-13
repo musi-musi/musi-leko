@@ -11,21 +11,21 @@ const meta = std.meta;
 /// vertex buffers can be bound to the array via the `buffer_binds` field by accessing the field for the buffer's bind
 /// ex: `array.buffer_binds.positions.bind(positions_buffer);`
 /// if using multiple vertex buffers, make sure their bind configs ensure no overlap in indices
-pub fn Array(comptime BufferBinds_: type, comptime IndexElement_: type) type {
+pub fn Array(comptime BufferBinds_: type, comptime index_element_: buffer.IndexElement) type {
 
     return struct {
 
-        handle: c_int,
+        handle: c_uint,
         buffer_binds: BufferBinds,
 
-        pub const IndexElement = IndexElement_;
-        pub const IndexBuffer = buffer.IndexBuffer(IndexElement);
+        pub const index_element = index_element_;
+        pub const IndexBuffer = buffer.IndexBuffer(index_element);
         pub const BufferBinds = BufferBinds_;
 
         const Self = @This();
 
         pub fn init() Self {
-            var self = undefined;
+            var self: Self = undefined;
             c.glCreateVertexArrays(1, &self.handle);
             if (@typeInfo(BufferBinds) != .Struct) {
                 @compileError("BufferBinds must be a struct, not " ++ @typeName(BufferBinds));
@@ -34,22 +34,22 @@ pub fn Array(comptime BufferBinds_: type, comptime IndexElement_: type) type {
                 const Bind = field.field_type;
                 @field(self.buffer_binds, field.name) = Bind.init(self.handle);
                 const Attributes = Bind.Attributes;
-                const config = Bind.Attributes;
+                const config = Bind.config;
                 comptime var attribute_index = config.attribute_start;
                 inline for (meta.fields(Attributes)) |attribute_field| {
                     const attribute = comptime AttributeType.fromType(attribute_field.field_type);
                     c.glEnableVertexArrayAttrib(self.handle, attribute_index);
                     const offset = @offsetOf(Attributes, attribute_field.name);
                     switch (attribute.primitive) {
-                        .half, .float => c.glVertexArrayAttribFormat(self.handle, attribute_index, attribute.len, attribute.primitive, 0, offset),
-                        .double => c.glVertexArrayAttribLFormat(self.handle, attribute_index, attribute.len, attribute.primitive, offset),
-                        else => c.glVertexArrayAttribIFormat(self.handle, attribute_index, attribute.len, attribute.primitive, offset),
+                        .half, .float => c.glVertexArrayAttribFormat(self.handle, attribute_index, attribute.len, @enumToInt(attribute.primitive), 0, offset),
+                        .double => c.glVertexArrayAttribLFormat(self.handle, attribute_index, attribute.len, @enumToInt(attribute.primitive), offset),
+                        else => c.glVertexArrayAttribIFormat(self.handle, attribute_index, attribute.len, @enumToInt(attribute.primitive), offset),
                     }
-                    c.glVertexArrayAttribBinding(self.handle, attribute_index, config.binding_index);
+                    c.glVertexArrayAttribBinding(self.handle, attribute_index, config.bind_index);
                     attribute_index += 1;
                 }
                 if (config.divisor > 0) {
-                    c.glVertexArrayBindingDivisor(self.handle, config.binding_index, config.divisor);
+                    c.glVertexArrayBindingDivisor(self.handle, config.bind_index, config.divisor);
                 }
             }
             return self;
@@ -92,7 +92,7 @@ pub const BufferBindConfig = struct {
 /// startomg with `config.attribute_start`
 pub fn BufferBind(comptime Attributes_: type, comptime config_: BufferBindConfig) type {
     return struct {
-        array: c_int,
+        array: c_uint,
 
 
         pub const config = config_;
@@ -101,7 +101,7 @@ pub fn BufferBind(comptime Attributes_: type, comptime config_: BufferBindConfig
 
         const Self = @This();
 
-        fn init(array: c_int) Self {
+        fn init(array: c_uint) Self {
             const self: Self = .{
                 .array = array,
             };

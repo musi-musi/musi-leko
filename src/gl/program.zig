@@ -8,7 +8,7 @@ pub const Error = error {
 
 /// a glsl shader program
 pub const Program = struct {    
-    handle: c_int,
+    handle: c_uint,
 
     const Self = @This();
 
@@ -39,18 +39,21 @@ pub const Program = struct {
         }
     }
 
+    pub fn use(self: Self) void {
+        c.glUseProgram(self.handle);
+    }
+
 };
 
-pub const StageType = enum(c_uint) {
+pub const StageType = enum(c_int) {
     vertex = c.GL_VERTEX_SHADER,
     fragment = c.GL_FRAGMENT_SHADER,
 };
 
-
 /// a glsl shader stage, create one for each `StageType` you need, attach to a `Program` and link
 pub fn Stage(comptime stage_type_: StageType) type {
     return struct {
-        handle: c_int,
+        handle: c_uint,
 
         pub const stage_type = stage_type_;
 
@@ -180,6 +183,11 @@ pub fn uniform(comptime name: []const u8, comptime primitive: UniformType.Primit
     };
 }
 
+/// create a uniform declaration for a glsl texture unit
+pub fn uniformTextureUnit(comptime name: []const u8) Uniform {
+    return uniform(name, .int);
+}
+
 /// create a uniform declaration for an array of a glsl value (scalar, vector, or matrix)
 pub fn uniformArray(comptime name: []const u8, comptime primitive: UniformType.Primitive, comptime count: c_uint) Uniform {
     return Uniform{
@@ -272,7 +280,6 @@ pub const UniformType = struct {
         vec2ui,
         vec3ui,
         vec4ui,
-        
         
         mat2,
         mat3,

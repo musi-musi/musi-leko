@@ -3,6 +3,7 @@ const c = @import("c.zig");
 pub const buffer = @import("gl/buffer.zig");
 pub const array = @import("gl/array.zig");
 pub const program = @import("gl/program.zig");
+pub const draw = @import("gl/draw.zig");
 
 pub fn init() void {
     if (c.gladLoadGLLoader(@ptrCast(c.GLADloadproc, c.glfwGetProcAddress)) == 0) {
