@@ -5,7 +5,7 @@ const glfw = @import("glfw.zig");
 
 const nm = @import("nm");
 
-const hello_triangle = @import("hello_triangle.zig");
+const render = @import("render");
 
 pub fn main() !void {
     glfw.init();
@@ -22,7 +22,7 @@ pub fn main() !void {
 
     gl.viewport(0, 0, width, height);
 
-    var ht = try hello_triangle.HelloTriangle.init();
+    var ht = try render.init();
     defer ht.deinit();
 
     while (!window.shouldClose()) {

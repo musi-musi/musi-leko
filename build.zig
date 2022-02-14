@@ -57,9 +57,20 @@ pub fn build(b: *std.build.Builder) void {
 }
 
 fn addPkgs(step: *std.build.LibExeObjStep) void {
-    const nm = Pkg{
+    const nm = Pkg {
         .name = "nm",
         .path = FileSource.relative("src/nanpa-musi/src/nm.zig"),
     };
+    const gl = Pkg {
+        .name = "gl",
+        .path = FileSource.relative("src/gl.zig"),
+    };
+    const render = Pkg {
+        .name = "render",
+        .path = FileSource.relative("src/render.zig"),
+        .dependencies = &[_]Pkg{ nm, gl },
+    };
     step.addPackage(nm);
+    step.addPackage(gl);
+    step.addPackage(render);
 }
