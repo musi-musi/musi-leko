@@ -1,9 +1,13 @@
 const c = @import("c.zig");
 
-pub const buffer = @import("gl/buffer.zig");
-pub const array = @import("gl/array.zig");
-pub const program = @import("gl/program.zig");
-pub const draw = @import("gl/draw.zig");
+const buffer = @import("gl/buffer.zig");
+const array = @import("gl/array.zig");
+const program = @import("gl/program.zig");
+const draw = @import("gl/draw.zig");
+pub usingnamespace buffer;
+pub usingnamespace array;
+pub usingnamespace program;
+pub usingnamespace draw;
 
 pub fn init() void {
     if (c.gladLoadGLLoader(@ptrCast(c.GLADloadproc, c.glfwGetProcAddress)) == 0) {

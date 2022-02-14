@@ -1,19 +1,15 @@
 const std = @import("std");
 const gl = @import("gl");
 
-const glb = gl.buffer;
-const gla = gl.array;
-const glp = gl.program;
-
 const VertexAttributes = struct {
     position: [2]f32,
     color: [3]f32,
 };
 
-const VertexBuffer = glb.VertexBuffer(VertexAttributes);
+const VertexBuffer = gl.VertexBuffer(VertexAttributes);
 
-const Array = gla.Array(struct {
-    vert: gla.BufferBind(VertexAttributes, .{})
+const Array = gl.Array(struct {
+    vert: gl.BufferBind(VertexAttributes, .{})
 }, .uint);
 
 
@@ -23,9 +19,9 @@ pub const HelloTriangle = struct {
     vertex_buffer: VertexBuffer,
     index_buffer: Array.IndexBuffer,
 
-    program: glp.Program,
-    vert_stage: glp.Stage(.vertex),
-    frag_stage: glp.Stage(.fragment),
+    program: gl.Program,
+    vert_stage: gl.VertexStage,
+    frag_stage: gl.FragmentStage,
 
     const Self = @This();
 
@@ -34,9 +30,9 @@ pub const HelloTriangle = struct {
             .array = Array.init(),
             .vertex_buffer = VertexBuffer.init(),
             .index_buffer = Array.IndexBuffer.init(),
-            .program = glp.Program.init(),
-            .vert_stage = glp.Stage(.vertex).init(),
-            .frag_stage = glp.Stage(.fragment).init(),
+            .program = gl.Program.init(),
+            .vert_stage = gl.VertexStage.init(),
+            .frag_stage = gl.FragmentStage.init(),
         };
         
         self.vertex_buffer.data(&[_]VertexAttributes{
@@ -75,8 +71,8 @@ pub const HelloTriangle = struct {
         self.array.bind();
         self.program.use();
 
-        gl.draw.clearColor(.{0, 0, 0, 1});
-        gl.draw.clearDepth(.float, 1);
+        gl.clearColor(.{0, 0, 0, 1});
+        gl.clearDepth(.float, 1);
 
         return self;
     }
@@ -92,8 +88,8 @@ pub const HelloTriangle = struct {
 
     pub fn draw(self: Self) void {
         _ = self;
-        gl.draw.clear(.color_depth);
-        gl.draw.drawElements(.triangles, 3, .uint);
+        gl.clear(.color_depth);
+        gl.drawElements(.triangles, 3, .uint);
     }
 
 };

@@ -72,7 +72,7 @@ pub fn Array(comptime BufferBinds_: type, comptime index_element_: buffer.IndexE
 }
 
 
-pub fn unbind() void {
+pub fn unbindArray() void {
     c.glBindVertexArray(0);
 }
 

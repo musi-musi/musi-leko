@@ -1,11 +1,11 @@
 const c = @import("../c.zig");
 
-pub const Target = enum(c_uint) {
+pub const BufferTarget = enum(c_uint) {
     vertex = c.GL_ARRAY_BUFFER,
     index = c.GL_ELEMENT_ARRAY_BUFFER,
 };
 
-pub const Usage = enum(c_uint) {
+pub const BufferUsage = enum(c_uint) {
     stream_draw = c.GL_STREAM_DRAW,
     stream_read = c.GL_STREAM_READ,
     stream_copy = c.GL_STREAM_COPY,
@@ -40,7 +40,7 @@ pub const IndexElement = enum(c_int) {
 
 };
 
-pub fn Buffer(comptime target_: Target, comptime Element_: type) type {
+pub fn Buffer(comptime target_: BufferTarget, comptime Element_: type) type {
     return struct {
         
         handle: c_uint,
@@ -64,13 +64,13 @@ pub fn Buffer(comptime target_: Target, comptime Element_: type) type {
 
         /// allocate `size` bytes and declare usage
         /// old data is discarded, if it exists
-        pub fn alloc(self: Self, size: usize, usage: Usage) void {
+        pub fn alloc(self: Self, size: usize, usage: BufferUsage) void {
             c.glNamedBufferData(self.handle, @intCast(c_longlong, size * @sizeOf(Element)), c.NULL, @enumToInt(usage));
         }
 
         /// upload data, allocating enough bytes to store it, and declare usage
         /// old data is discarded, if it exists
-        pub fn data(self: Self, data_slice: []const Element, usage: Usage) void {
+        pub fn data(self: Self, data_slice: []const Element, usage: BufferUsage) void {
             const ptr = @ptrCast(*const anyopaque, data_slice.ptr);
             const size = @intCast(c_longlong, @sizeOf(Element) * data_slice.len);
             c.glNamedBufferData(self.handle, size, ptr, @enumToInt(usage));

@@ -1,7 +1,7 @@
 const std = @import("std");
 const c = @import("../c.zig");
 
-pub const Error = error {
+pub const ProgramError = error {
     CompilationFailed,
     LinkingFailed,
 };
@@ -26,7 +26,7 @@ pub const Program = struct {
         c.glAttachShader(self.handle, stage.handle);
     }
 
-    pub fn link(self: Self) Error!void {
+    pub fn link(self: Self) ProgramError!void {
         c.glLinkProgram(self.handle);
         var success: c_int = undefined;
         c.glGetProgramiv(self.handle, c.GL_LINK_STATUS, &success);
@@ -35,7 +35,7 @@ pub const Program = struct {
             var msg: [512]u8 = undefined;
             c.glGetProgramInfoLog(self.handle, max_msg_size, null, &msg);
             std.log.err("failed to link shader program:\n{s}", .{msg});
-            return Error.CompilationFailed;
+            return ProgramError.CompilationFailed;
         }
     }
 
@@ -49,6 +49,9 @@ pub const StageType = enum(c_int) {
     vertex = c.GL_VERTEX_SHADER,
     fragment = c.GL_FRAGMENT_SHADER,
 };
+
+pub const VertexStage = Stage(.vertex);
+pub const FragmentStage = Stage(.fragment);
 
 /// a glsl shader stage, create one for each `StageType` you need, attach to a `Program` and link
 pub fn Stage(comptime stage_type_: StageType) type {
@@ -74,7 +77,7 @@ pub fn Stage(comptime stage_type_: StageType) type {
             c.glShaderSource(self.handle, 1, &text.ptr, &len);
         }
 
-        pub fn compile(self: Self) Error!void {
+        pub fn compile(self: Self) ProgramError!void {
             c.glCompileShader(self.handle);
             var success: c_int = undefined;
             c.glGetShaderiv(self.handle, c.GL_COMPILE_STATUS, &success);
@@ -83,7 +86,7 @@ pub fn Stage(comptime stage_type_: StageType) type {
                 var msg: [512]u8 = undefined;
                 c.glGetShaderInfoLog(self.handle, max_msg_size, null, &msg);
                 std.log.err("failed to compile {s} shader program stage:\n{s}", .{ @tagName(stage_type), msg});
-                return Error.CompilationFailed;
+                return ProgramError.CompilationFailed;
             }
         }
 
