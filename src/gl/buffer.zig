@@ -1,4 +1,4 @@
-const c = @import("../c.zig");
+const c = @import("c");
 
 pub const BufferTarget = enum(c_uint) {
     vertex = c.GL_ARRAY_BUFFER,

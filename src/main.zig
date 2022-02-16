@@ -1,33 +1,23 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const gl = @import("gl.zig");
-const glfw = @import("glfw.zig");
 
-const nm = @import("nm");
-
+const shell = @import("shell");
 const render = @import("render");
 
+
+const width = 1920;
+const height = 1080;
+
 pub fn main() !void {
-    glfw.init();
-    defer glfw.deinit();
+
+    var sh = try shell.init();
+    defer sh.deinit();
+    try sh.start(width, height, "toki ma o!");
     
-    const width = 1920;
-    const height = 1080;
+    var r = try render.init();
+    defer r.deinit();
 
-    var window = glfw.Window.init(width, height, "a toki ma!");
-    defer window.deinit();
-
-    gl.init();
-    window.setVsyncMode(.enabled);
-
-    gl.viewport(0, 0, width, height);
-
-    var ht = try render.init();
-    defer ht.deinit();
-
-    while (!window.shouldClose()) {
-        ht.draw();
-        window.update();
-        window.swapBuffers();
+    while (sh.nextFrame()) {
+        r.draw();
     }
 }

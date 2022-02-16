@@ -1,5 +1,5 @@
 const std = @import("std");
-const c = @import("../c.zig");
+const c = @import("c");
 const buffer = @import("buffer.zig");
 
 pub fn clearColor(color: [4]f32) void {

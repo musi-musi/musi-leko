@@ -1,7 +1,7 @@
 const panic = @import("std").debug.panic;
 
-const c = @import("c.zig");
-const window = @import("glfw/window.zig");
+const c = @import("c");
+const window = @import("window.zig");
 pub const Window = window.Window;
 // pub usingnamespace @import("window.zig");
 // pub usingnamespace @import("mouse.zig");

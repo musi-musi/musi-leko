@@ -1,9 +1,11 @@
-const c = @import("c.zig");
+const c = @import("../c.zig");
 
-const buffer = @import("gl/buffer.zig");
-const array = @import("gl/array.zig");
-const program = @import("gl/program.zig");
-const draw = @import("gl/draw.zig");
+pub const config = @import("config.zig");
+
+const buffer = @import("buffer.zig");
+const array = @import("array.zig");
+const program = @import("program.zig");
+const draw = @import("draw.zig");
 pub usingnamespace buffer;
 pub usingnamespace array;
 pub usingnamespace program;

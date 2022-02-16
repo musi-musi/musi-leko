@@ -1,6 +1,6 @@
 const panic = @import("std").debug.panic;
 
-const c =@import("../c.zig");
+const c = @import("c");
 // usingnamespace @import("mouse.zig");
 // usingnamespace @import("keyboard.zig");
 // usingnamespace @import("time.zig");
