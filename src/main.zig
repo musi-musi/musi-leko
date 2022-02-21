@@ -8,15 +8,17 @@ const render = @import("render");
 const width = 1920;
 const height = 1080;
 
+const demo = render.demos.triangle;
+
 pub fn main() !void {
 
     try window.init(.{});
     defer window.deinit();
     
-    var r = try render.init();
-    defer r.deinit();
+    try demo.init();
+    defer demo.deinit();
 
     while (window.nextFrame()) {
-        r.draw();
+        demo.draw();
     }
 }

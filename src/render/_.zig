@@ -1,5 +1,5 @@
-pub const hello_triangle = @import("hello_triangle.zig");
+pub const demos = struct {
 
-pub fn init() !hello_triangle.HelloTriangle {
-    return hello_triangle.HelloTriangle.init();
-}
+    pub const triangle = @import("demos/triangle.zig");
+
+};
