@@ -63,7 +63,7 @@ fn addPkgs(step: *std.build.LibExeObjStep) void {
     };
     const nm = Pkg {
         .name = "nm",
-        .path = FileSource.relative("src/nanpa-musi/src/nm.zig"),
+        .path = FileSource.relative("src/nanpa-musi/_.zig"),
     };
     const gl = Pkg {
         .name = "gl",
