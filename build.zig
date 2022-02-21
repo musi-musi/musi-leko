@@ -83,7 +83,7 @@ fn addPkgs(step: *std.build.LibExeObjStep) void {
     const render = Pkg {
         .name = "render",
         .path = FileSource.relative("src/render/_.zig"),
-        .dependencies = &[_]Pkg{ nm, gl },
+        .dependencies = &[_]Pkg{ nm, gl, shell },
     };
     step.addPackage(c);
     step.addPackage(nm);

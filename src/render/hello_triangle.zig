@@ -1,5 +1,7 @@
 const std = @import("std");
 const gl = @import("gl");
+const shell = @import("shell");
+const nm = @import("nm");
 
 const VertexAttributes = struct {
     position: [2]f32,
@@ -13,6 +15,10 @@ const Array = gl.Array(struct {
 }, .uint);
 
 
+const Uniforms = gl.ProgramUniforms(&.{
+    gl.uniform("proj", .mat4),
+});
+
 pub const HelloTriangle = struct {
     
     array: Array,
@@ -22,17 +28,19 @@ pub const HelloTriangle = struct {
     program: gl.Program,
     vert_stage: gl.VertexStage,
     frag_stage: gl.FragmentStage,
+    uniforms: Uniforms,
 
     const Self = @This();
 
     pub fn init() !Self {
-        const self = Self {
+        var self = Self {
             .array = Array.init(),
             .vertex_buffer = VertexBuffer.init(),
             .index_buffer = Array.IndexBuffer.init(),
             .program = gl.Program.init(),
             .vert_stage = gl.VertexStage.init(),
             .frag_stage = gl.FragmentStage.init(),
+            .uniforms = undefined,
         };
         
         self.vertex_buffer.data(&[_]VertexAttributes{
@@ -67,6 +75,7 @@ pub const HelloTriangle = struct {
         self.program.attach(.fragment, self.frag_stage);
         try self.program.link();
 
+        self.uniforms = Uniforms.init(self.program.handle);
 
         self.array.bind();
         self.program.use();
@@ -86,10 +95,17 @@ pub const HelloTriangle = struct {
         self.frag_stage.deinit();
     }
 
-    pub fn draw(self: Self) void {
-        _ = self;
+    pub fn draw(self: Self, sh: shell.Shell) void {
+        var proj = projectionMatrix(sh);
+        self.uniforms.set("proj", proj.v);
         gl.clear(.color_depth);
         gl.drawElements(.triangles, 3, .uint);
     }
 
 };
+
+fn projectionMatrix(sh: shell.Shell) nm.Mat4 {
+    const fov: f32 = std.math.pi / 2.0;
+    const aspect = @intToFloat(f32, sh.window.width) / @intToFloat(f32, sh.window.height);
+    return nm.transform.createPerspective(fov, aspect, 0.001, 100);
+}

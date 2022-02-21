@@ -105,14 +105,14 @@ pub fn Stage(comptime stage_type_: StageType) type {
 /// ```
 pub fn ProgramUniforms(comptime uniforms_: []const Uniform) type {
     return struct {
-        program: c_int,
+        program: c_uint,
         locations: [uniforms.len]c_int,
 
         pub const uniforms = uniforms_;
 
         const Self = @This();
 
-        fn init(program: c_int) Self {
+        pub fn init(program: c_uint) Self {
             var self: Self = undefined;
             self.program = program;
             inline for (uniforms) |uni, i| {
@@ -135,7 +135,7 @@ pub fn ProgramUniforms(comptime uniforms_: []const Uniform) type {
         }
 
         pub fn set(self: Self, comptime name: []const u8, value: Value(name)) void {
-            const index = indexOf(name);
+            const index = comptime indexOf(name);
 
             const uniform_type = uniforms[index].uniform_type;
             

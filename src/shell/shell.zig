@@ -6,36 +6,52 @@ const window = @import("window.zig");
 
 const Window = window.Window;
 
+const Allocator = std.mem.Allocator;
+
+pub const Error  = error {
+    InitializationFailed,
+    AlreadyRunning,
+};
+
+var running_shell: ?*Shell = null;
+
+pub fn init(allocator: Allocator, width: u32, height: u32, title: [:0]const u8) !*Shell {
+    if (running_shell != null) {
+        return Error.AlreadyRunning;
+    }
+    if (c.glfwInit() == 0) {
+        return Error.InitializationFailed;
+    }
+    running_shell = try Shell.create(allocator, width, height, title);
+    return running_shell.?;
+}
+
+pub fn deinit() void {
+    if (running_shell) |rs| {
+        rs.destroy();
+    }
+    c.glfwTerminate();
+}
+
 pub const Shell = struct {
     
+    allocator: Allocator,
     window: Window,
     
     const Self = @This();
 
-    pub const Error  = error {
-        InitializationFailed,
-    };
-
-    pub fn init() !Self{
-        if (c.glfwInit() == 0) {
-            return Error.InitializationFailed;
-        }
-        return Self{
+    fn create(allocator: Allocator, width: u32, height: u32, title: [:0]const u8) !*Self{
+        var self = try allocator.create(Self);
+        self.* = Self{
+            .allocator = allocator,
             .window = undefined,
         };
+        try self.window.init(width, height, title);
+        return self;
     }
 
-    pub fn start(self: *Self, width: u32, height: u32, title: [:0]const u8) !void {
-        var w = try Window.init(width, height, title);
-        self.window = w;
-        gl.init();
-        gl.viewport(0, 0, @intCast(c_int, width), @intCast(c_int, height));
-
-    }
-
-    pub fn deinit(self: Self) void {
-        _ = self;
-        c.glfwTerminate();
+    fn destroy(self: *Self) void {
+        self.allocator.destroy(self);
     }
 
     pub fn nextFrame(self: Self) bool {
@@ -43,3 +59,6 @@ pub const Shell = struct {
     }
 
 };
+
+
+

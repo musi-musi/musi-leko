@@ -10,14 +10,15 @@ const height = 1080;
 
 pub fn main() !void {
 
-    var sh = try shell.init();
-    defer sh.deinit();
-    try sh.start(width, height, "toki ma o!");
-    
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+
+    var sh = try shell.init(gpa.allocator(), width, height, "toki ma o!");
+    defer shell.deinit();
+
     var r = try render.init();
     defer r.deinit();
 
     while (sh.nextFrame()) {
-        r.draw();
+        r.draw(sh.*);
     }
 }
