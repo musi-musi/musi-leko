@@ -4,24 +4,23 @@ const gl = @import("gl");
 pub const Handle = *c.GLFWwindow;
 
 pub var handle: Handle = undefined;
-pub var width: u32 = 0;
-pub var height: u32 = 0;
+pub var _width: u32 = 0;
+pub var _height: u32 = 0;
 
 pub const exports = struct {
 
-    pub fn getWidth() u32 {
-        return width;
+    pub fn width() u32 {
+        return _width;
     }
 
-    pub fn getHeight() u32 {
-        return height;
+    pub fn height() u32 {
+        return _height;
     }
 
-    pub fn nextFrame() bool {
-        c.glfwSwapBuffers(handle);
-        c.glfwPollEvents();
-        return c.glfwWindowShouldClose(handle) == 0;
+    pub fn close() void {
+        c.glfwSetWindowShouldClose(handle, c.GLFW_TRUE);
     }
+
 
 };
 
@@ -41,10 +40,10 @@ pub fn init(config: Config) !void {
     c.glfwWindowHint(c.GLFW_OPENGL_PROFILE, c.GLFW_OPENGL_CORE_PROFILE);
     c.glfwWindowHint(c.GLFW_OPENGL_FORWARD_COMPAT, c.GL_TRUE);
 
-    width = config.width;
-    height = config.height;
+    _width = config.width;
+    _height = config.height;
 
-    const handle_opt = c.glfwCreateWindow(@intCast(c_int, width), @intCast(c_int, height), config.title, null, null);
+    const handle_opt = c.glfwCreateWindow(@intCast(c_int, _width), @intCast(c_int, _height), config.title, null, null);
     if (handle_opt == null) {
         return Error.WindowCreationFailed;
     }
@@ -53,17 +52,23 @@ pub fn init(config: Config) !void {
     _ = c.glfwSetFramebufferSizeCallback(handle, frameBufferSizeCallback);
 
     gl.init();
-    gl.viewport(0, 0, @intCast(c_int, width), @intCast(c_int, height));
+    gl.viewport(0, 0, @intCast(c_int, _width), @intCast(c_int, _height));
 
 }
 
 fn frameBufferSizeCallback(window: ?Handle, width_: c_int, height_: c_int) callconv(.C) void {
     _ = window;
-    width = @intCast(u32, width_);
-    height = @intCast(u32, height_);
+    _width = @intCast(u32, width_);
+    _height = @intCast(u32, height_);
     gl.viewport(0, 0, width_, height_);
 }
 
 pub fn deinit() void {
     c.glfwDestroyWindow(handle);
+}
+
+pub fn nextFrame() bool {
+    c.glfwSwapBuffers(handle);
+    c.glfwPollEvents();
+    return c.glfwWindowShouldClose(handle) == 0;
 }

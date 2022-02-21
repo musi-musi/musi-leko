@@ -18,7 +18,12 @@ pub fn main() !void {
     try demo.init();
     defer demo.deinit();
 
-    while (window.nextFrame()) {
-        demo.draw();
+    while (window.update()) {
+        if (window.keyWasPressed(.escape)) {
+            window.close();
+        }
+        else {
+            demo.draw();
+        }
     }
 }

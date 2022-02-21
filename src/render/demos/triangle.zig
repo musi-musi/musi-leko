@@ -77,8 +77,8 @@ pub fn draw() void {
 
 
 fn projectionMatrix() nm.Mat4 {
-    const width = window.getWidth();
-    const height = window.getHeight();
+    const width = window.width();
+    const height = window.height();
     const fov: f32 = std.math.pi / 2.0;
     const aspect = @intToFloat(f32, width) / @intToFloat(f32, height);
     return nm.transform.createPerspective(fov, aspect, 0.001, 100);
