@@ -1,6 +1,6 @@
 const std = @import("std");
 const gl = @import("gl");
-const shell = @import("shell");
+const window = @import("window");
 const nm = @import("nm");
 
 const VertexAttributes = struct {
@@ -95,8 +95,8 @@ pub const HelloTriangle = struct {
         self.frag_stage.deinit();
     }
 
-    pub fn draw(self: Self, sh: shell.Shell) void {
-        var proj = projectionMatrix(sh);
+    pub fn draw(self: Self) void {
+        var proj = projectionMatrix();
         self.uniforms.set("proj", proj.v);
         gl.clear(.color_depth);
         gl.drawElements(.triangles, 3, .uint);
@@ -104,8 +104,10 @@ pub const HelloTriangle = struct {
 
 };
 
-fn projectionMatrix(sh: shell.Shell) nm.Mat4 {
+fn projectionMatrix() nm.Mat4 {
+    const width = window.getWidth();
+    const height = window.getHeight();
     const fov: f32 = std.math.pi / 2.0;
-    const aspect = @intToFloat(f32, sh.window.width) / @intToFloat(f32, sh.window.height);
+    const aspect = @intToFloat(f32, width) / @intToFloat(f32, height);
     return nm.transform.createPerspective(fov, aspect, 0.001, 100);
 }
