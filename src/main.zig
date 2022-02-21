@@ -8,7 +8,7 @@ const render = @import("render");
 const width = 1920;
 const height = 1080;
 
-const demo = render.demos.triangle;
+const demo = render.demos.cube;
 
 pub fn main() !void {
 

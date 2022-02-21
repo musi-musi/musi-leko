@@ -27,8 +27,6 @@ var vertex_buffer: VertexBuffer = undefined;
 var index_buffer: Array.IndexBuffer = undefined;
 var shader: Shader = undefined;
 
-const Self = @This();
-
 pub fn init() !void {
     array = Array.init();
     vertex_buffer = VertexBuffer.init();
