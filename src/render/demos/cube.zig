@@ -59,15 +59,8 @@ pub fn init() !void {
     
     array.bind();
     shader.use();
-
-    const view = nm.transform.createLookAt(
-        Vec3.init(.{5, 2, 3}),
-        Vec3.init(.{0.5, 0.5, 0.5}),
-        Vec3.init(.{0, 1, 0}),
-    );
+    
     const light = Vec3.init(.{1, 2, 3}).norm();
-
-    shader.uniforms.set("view", view.v);
     shader.uniforms.set("light", light.v);
 
     gl.clearColor(.{0, 0, 0, 1});
@@ -89,6 +82,10 @@ pub fn draw() void {
 }
 
 const fov: f32 = 45;
+
+pub fn setViewMatrix(view: nm.Mat4) void {
+    shader.uniforms.set("view", view.v);
+}
 
 fn projectionMatrix() nm.Mat4 {
     const width = window.width();

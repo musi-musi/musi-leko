@@ -6,11 +6,11 @@ pub usingnamespace window.exports;
 const time = @import("time.zig");
 pub usingnamespace time.exports;
 
-pub const keyboard = @import("keyboard.zig");
-pub usingnamespace keyboard.exports;
+pub const keys = @import("keys.zig");
+pub usingnamespace keys.exports;
 
-pub const KeyState = keyboard.KeyState;
-pub const KeyCode = keyboard.KeyCode;
+pub const KeyState = keys.KeyState;
+pub const KeyCode = keys.KeyCode;
 
 pub const WindowConfig = window.Config;
 
@@ -35,7 +35,7 @@ pub fn deinit() void {
 pub fn update() bool {
     if (window.nextFrame()) {
         time.update();
-        keyboard.update();
+        keys.update();
         return true;
     }
     else {

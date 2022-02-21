@@ -67,8 +67,12 @@ const State = struct {
     fn poll(self: *Self) void {
         @setEvalBranchQuota(100000);
         inline for(comptime std.enums.values(KeyCode)) |key, i| {
-            const glfw_key = comptime @enumToInt(GlfwKeyCode.fromKeyCode(key));
-            self.key_states[i] = @intToEnum(KeyState, c.glfwGetKey(window.handle, glfw_key));
+            const glfw_key = comptime GlfwKeyCode.fromKeyCode(key);
+            const glfw_code = comptime glfw_key.glfwCode();
+            switch (comptime glfw_key.keyType()) {
+                .keyboard => self.key_states[i] = @intToEnum(KeyState, c.glfwGetKey(window.handle, glfw_code)),
+                .mouse => self.key_states[i] = @intToEnum(KeyState, c.glfwGetMouseButton(window.handle, glfw_code)),
+            }
         }
     }
 
@@ -101,9 +105,33 @@ const KeyCode = blk: {
 
 const GlfwKeyCode = enum(c_int) {
     
-    fn fromKeyCode(key: KeyCode) GlfwKeyCode {
-        return std.enums.values(GlfwKeyCode)[@enumToInt(key)];
+    const Self = @This();
+
+    fn fromKeyCode(key: KeyCode) Self {
+        return std.enums.values(Self)[@enumToInt(key)];
     }
+
+    fn keyType(self: Self) KeyType {
+        const mouse_start = @enumToInt(Self.mouse_1);
+        if (@enumToInt(self) >= mouse_start) {
+            return .mouse;
+        }
+        else {
+            return .keyboard;
+        }
+    }
+
+    fn glfwCode(self: Self) c_int {
+        switch (self.keyType()) {
+            .keyboard => return @enumToInt(self),
+            .mouse => return @enumToInt(self) - (c.GLFW_KEY_LAST + 1),
+        }
+    }
+
+    const KeyType = enum {
+        keyboard,
+        mouse,
+    };
 
     space = c.GLFW_KEY_SPACE,
     apostrophe = c.GLFW_KEY_APOSTROPHE,
@@ -226,4 +254,13 @@ const GlfwKeyCode = enum(c_int) {
     right_super = c.GLFW_KEY_RIGHT_SUPER,
     menu = c.GLFW_KEY_MENU,
     unknown = c.GLFW_KEY_UNKNOWN,
+
+    mouse_1 = c.GLFW_MOUSE_BUTTON_1 + c.GLFW_KEY_LAST + 1,
+    mouse_2 = c.GLFW_MOUSE_BUTTON_2 + c.GLFW_KEY_LAST + 1,
+    mouse_3 = c.GLFW_MOUSE_BUTTON_3 + c.GLFW_KEY_LAST + 1,
+    mouse_4 = c.GLFW_MOUSE_BUTTON_4 + c.GLFW_KEY_LAST + 1,
+    mouse_5 = c.GLFW_MOUSE_BUTTON_5 + c.GLFW_KEY_LAST + 1,
+    mouse_6 = c.GLFW_MOUSE_BUTTON_6 + c.GLFW_KEY_LAST + 1,
+    mouse_7 = c.GLFW_MOUSE_BUTTON_7 + c.GLFW_KEY_LAST + 1,
+    mouse_8 = c.GLFW_MOUSE_BUTTON_8 + c.GLFW_KEY_LAST + 1,
 };
