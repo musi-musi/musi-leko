@@ -15,18 +15,17 @@ const Array = gl.Array(struct {
 }, .uint);
 
 
-const Uniforms = gl.ProgramUniforms(&.{
+pub const Shader = @import("../shader.zig").Shader(&.{
     gl.uniform("proj", .mat4),
-});
+    },
+    @embedFile("triangle.vert"),
+    @embedFile("triangle.frag"),
+);
 
 var array: Array = undefined;
 var vertex_buffer: VertexBuffer = undefined;
 var index_buffer: Array.IndexBuffer = undefined;
-
-var program: gl.Program = undefined;
-var vert_stage: gl.VertexStage = undefined;
-var frag_stage: gl.FragmentStage = undefined;
-var uniforms: Uniforms = undefined;
+var shader: Shader = undefined;
 
 const Self = @This();
 
@@ -34,9 +33,6 @@ pub fn init() !void {
     array = Array.init();
     vertex_buffer = VertexBuffer.init();
     index_buffer = Array.IndexBuffer.init();
-    program = gl.Program.init();
-    vert_stage = gl.VertexStage.init();
-    frag_stage = gl.FragmentStage.init();
     
     vertex_buffer.data(&[_]VertexAttributes{
         .{
@@ -58,22 +54,10 @@ pub fn init() !void {
     array.bindIndexBuffer(index_buffer);
     array.buffer_binds.vert.bindBuffer(vertex_buffer);
     
+    shader = try Shader.init();
     
-    
-    vert_stage.source(@embedFile("triangle.vert"));
-    try vert_stage.compile();
-    
-    frag_stage.source(@embedFile("triangle.frag"));
-    try frag_stage.compile();
-
-    program.attach(.vertex, vert_stage);
-    program.attach(.fragment, frag_stage);
-    try program.link();
-
-    uniforms = Uniforms.init(program.handle);
-
     array.bind();
-    program.use();
+    shader.use();
 
     gl.clearColor(.{0, 0, 0, 1});
     gl.clearDepth(.float, 1);
@@ -83,14 +67,12 @@ pub fn deinit() void {
     array.deinit();
     vertex_buffer.deinit();
     index_buffer.deinit();
-    program.deinit();
-    vert_stage.deinit();
-    frag_stage.deinit();
+    shader.deinit();
 }
 
 pub fn draw() void {
     var proj = projectionMatrix();
-    uniforms.set("proj", proj.v);
+    shader.uniforms.set("proj", proj.v);
     gl.clear(.color_depth);
     gl.drawElements(.triangles, 3, .uint);
 }
