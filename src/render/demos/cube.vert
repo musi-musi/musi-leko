@@ -14,7 +14,7 @@ void main() {
     vec4 pos;
     pos.xyz = position;
     pos.w = 1;
-    frag_light = clamp(dot(normal, light), 0, 1);
+    frag_light = abs(dot(normal, light));
     // if (length(normal) < 0) {
     //     frag_color = vec3(1) + normal;
     // }

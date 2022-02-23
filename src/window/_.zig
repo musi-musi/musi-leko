@@ -9,6 +9,9 @@ pub usingnamespace time.exports;
 pub const keys = @import("keys.zig");
 pub usingnamespace keys.exports;
 
+pub const mouse = @import("mouse.zig");
+pub usingnamespace mouse.exports;
+
 pub const KeyState = keys.KeyState;
 pub const KeyCode = keys.KeyCode;
 
@@ -25,6 +28,7 @@ pub fn init(config: WindowConfig) !void {
     }
     try window.init(config);
     time.init();
+    mouse.init();
 }
 
 pub fn deinit() void {
@@ -36,6 +40,7 @@ pub fn update() bool {
     if (window.nextFrame()) {
         time.update();
         keys.update();
+        mouse.update();
         return true;
     }
     else {
