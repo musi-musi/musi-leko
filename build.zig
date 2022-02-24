@@ -70,11 +70,6 @@ fn addPkgs(step: *std.build.LibExeObjStep) void {
         .path = FileSource.relative("src/gl/_.zig"),
         .dependencies = &[_]Pkg{ c },
     };
-    const glfw = Pkg {
-        .name = "glfw",
-        .path = FileSource.relative("src/glfw/_.zig"),
-        .dependencies = &[_]Pkg{ c, nm },
-    };
     const window = Pkg {
         .name = "window",
         .path = FileSource.relative("src/window/_.zig"),
@@ -85,10 +80,15 @@ fn addPkgs(step: *std.build.LibExeObjStep) void {
         .path = FileSource.relative("src/render/_.zig"),
         .dependencies = &[_]Pkg{ nm, gl, window },
     };
+    const input = Pkg {
+        .name = "input",
+        .path = FileSource.relative("src/input/_.zig"),
+        .dependencies = &[_]Pkg{ nm, window },
+    };
     step.addPackage(c);
     step.addPackage(nm);
     step.addPackage(gl);
-    step.addPackage(glfw);
     step.addPackage(window);
     step.addPackage(render);
+    step.addPackage(input);
 }

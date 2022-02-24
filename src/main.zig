@@ -3,6 +3,7 @@ const nm = @import("nm");
 
 const window = @import("window");
 const render = @import("render");
+const input = @import("input");
 
 
 const Vec3 = nm.Vec3;
@@ -20,25 +21,27 @@ pub fn main() !void {
     defer demo.deinit();
 
     var eye = Vec3.init(.{5, 2, 3});
+    var mouselook = input.MouseLook{};
+    window.setMouseMode(.hidden_raw);
 
     while (window.update()) {
         if (window.keyWasPressed(.escape)) {
             window.close();
         }
         else {
-            const delta = window.frameTime();
-            const mv = @floatCast(f32, delta * speed);
-            if (window.keyIsDown(.w)) eye = eye.add(Vec3.init(.{0, 0, mv}));
-            if (window.keyIsDown(.s)) eye = eye.add(Vec3.init(.{0, 0, -mv}));
-            if (window.keyIsDown(.a)) eye = eye.add(Vec3.init(.{-mv, 0, 0}));
-            if (window.keyIsDown(.d)) eye = eye.add(Vec3.init(.{mv, 0, 0}));
-            if (window.keyIsDown(.mouse_1)) eye = eye.add(Vec3.init(.{0, mv, 0}));
-            if (window.keyIsDown(.mouse_2)) eye = eye.add(Vec3.init(.{0, -mv, 0}));
-            demo.setViewMatrix(nm.transform.createLookAt(
-                eye,
-                Vec3.init(.{0.5, 0.5, 0.5}),
-                Vec3.init(.{0, 1, 0}),
-            ));
+            const delta = @floatCast(f32, window.frameTime());
+            mouselook.update();
+            const view = mouselook.viewMatrix();
+            const forward = view.transformDirection(nm.Vec3.unit(.z)).mulScalar(delta * speed);
+            const right = view.transformDirection(nm.Vec3.unit(.x)).mulScalar(delta * speed);
+            const up = nm.Vec3.unit(.y).mulScalar(delta * speed);
+            if (window.keyIsDown(.w)) eye = eye.add(forward);
+            if (window.keyIsDown(.s)) eye = eye.sub(forward);
+            if (window.keyIsDown(.a)) eye = eye.sub(right);
+            if (window.keyIsDown(.d)) eye = eye.add(right);
+            if (window.keyIsDown(.space)) eye = eye.add(up);
+            if (window.keyIsDown(.left_shift)) eye = eye.sub(up);
+            demo.setViewMatrix(nm.transform.createTranslate(eye.neg()).mul(view));
             demo.draw();
         }
     }

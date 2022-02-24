@@ -41,6 +41,8 @@ pub const exports = struct {
                 if (mode == .hidden_raw) c.GLFW_TRUE else c.GLFW_FALSE
             );
             c.glfwSetInputMode(window.handle, c.GLFW_RAW_MOUSE_MOTION, raw_mode);
+            c.glfwPollEvents();
+            resetMousePositionDelta();
         }
     }
 
