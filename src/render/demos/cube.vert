@@ -2,6 +2,7 @@
 
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
+layout (location = 2) in vec2 uv;
 
 uniform mat4 proj;
 uniform mat4 view;
@@ -9,6 +10,7 @@ uniform vec3 light;
 
 // out vec3 frag_color;
 out float frag_light;
+out vec2 frag_uv;
 
 void main() {
     vec4 pos;
@@ -22,4 +24,6 @@ void main() {
     //     frag_color = normal;
     // }
     gl_Position = proj * view *  pos;
+    frag_uv = uv;
+
 }

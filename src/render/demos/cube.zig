@@ -6,6 +6,7 @@ const nm = @import("nm");
 const Vertex = struct {
     position: [3]f32,
     normal: [3]f32,
+    uv: [2]f32,
 };
 
 const VertexBuffer = gl.VertexBuffer(Vertex);
@@ -15,24 +16,29 @@ const Array = gl.Array(struct {
 }, .uint);
 
 
-pub const Shader = @import("../shader.zig").Shader(&.{
+const Shader = @import("../shader.zig").Shader(&.{
         gl.uniform("view", .mat4),
         gl.uniform("proj", .mat4),
         gl.uniform("light", .vec3),
+        gl.uniformTextureUnit("maintex"),
     },
     @embedFile("cube.vert"),
     @embedFile("cube.frag"),
 );
 
+const Texture = gl.TextureRgba8(.texture_2d);
+
 var array: Array = undefined;
 var vertex_buffer: VertexBuffer = undefined;
 var index_buffer: Array.IndexBuffer = undefined;
 var shader: Shader = undefined;
+var texture: Texture = undefined;
 
 pub fn init() !void {
     array = Array.init();
     vertex_buffer = VertexBuffer.init();
     index_buffer = Array.IndexBuffer.init();
+    texture = Texture.init();
 
     const vertices =
         faceVertices(.x_pos) ++
@@ -57,11 +63,23 @@ pub fn init() !void {
     
     shader = try Shader.init();
     
+    const width: usize = 32;
+    const height: usize = 32;
+    const data = comptime genTextureData(width, height);
+
+    texture.alloc(width, height);
+    texture.upload(width, height, &data);
+
+    texture.setFilter(.nearest, .nearest);
+
+    texture.bind(0);
+
     array.bind();
     shader.use();
     
     const light = Vec3.init(.{1, 2, 3}).norm();
     shader.uniforms.set("light", light.v);
+    shader.uniforms.set("maintex", 0);
 
     gl.clearColor(.{0, 0, 0, 1});
     gl.clearDepth(.float, 1);
@@ -119,18 +137,22 @@ fn faceVertices(comptime normal_cardinal: Cardinal) [4]Vertex {
         .{
             .position = n.add(u[0]).add(v[1]).v,
             .normal = Vec3.unitSigned(normal_cardinal).v,
+            .uv = .{0, 1},
         },
         .{
             .position = n.add(u[1]).add(v[1]).v,
             .normal = Vec3.unitSigned(normal_cardinal).v,
+            .uv = .{1, 1},
         },
         .{
             .position = n.add(u[0]).add(v[0]).v,
             .normal = Vec3.unitSigned(normal_cardinal).v,
+            .uv = .{0, 0},
         },
         .{
             .position = n.add(u[1]).add(v[0]).v,
             .normal = Vec3.unitSigned(normal_cardinal).v,
+            .uv = .{1, 0},
         },
     };
 }
@@ -170,4 +192,18 @@ fn vertPositionOffset(comptime cardinal: Cardinal) Vec3 {
         .positive => return Vec3.unit(cardinal.axis()),
         .negative => return Vec3.zero,
     }
+}
+
+fn genTextureData(comptime width: usize, comptime height: usize) [width * height]Texture.Pixel {
+    @setEvalBranchQuota(1000000);
+    var result: [width * height]Texture.Pixel = undefined;
+    var rng = std.rand.DefaultPrng.init(0);
+    var random = rng.random();
+    for (result) |*pixel| {
+        pixel.*[0] = random.int(u8);
+        pixel.*[1] = random.int(u8);
+        pixel.*[2] = random.int(u8);
+        pixel.*[3] = 0xFF;
+    }
+    return result;
 }

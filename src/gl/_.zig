@@ -5,10 +5,12 @@ pub const config = @import("config.zig");
 const buffer = @import("buffer.zig");
 const array = @import("array.zig");
 const program = @import("program.zig");
+const texture = @import("texture.zig");
 const draw = @import("draw.zig");
 pub usingnamespace buffer;
 pub usingnamespace array;
 pub usingnamespace program;
+pub usingnamespace texture;
 pub usingnamespace draw;
 
 pub fn init() void {
