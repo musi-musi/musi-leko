@@ -35,15 +35,15 @@ pub const exports = struct {
     }
 
     pub fn setMouseMode(mode: MouseMode) void {
-        c.glfwSetInputMode(window.handle, c.GLFW_CURSOR, @enumToInt(mode));
+        c.glfwSetInputMode(window.handle(), c.GLFW_CURSOR, @enumToInt(mode));
         if (_raw_supported) {
             const raw_mode = (
                 if (mode == .hidden_raw) c.GLFW_TRUE else c.GLFW_FALSE
             );
-            c.glfwSetInputMode(window.handle, c.GLFW_RAW_MOUSE_MOTION, raw_mode);
+            c.glfwSetInputMode(window.handle(), c.GLFW_RAW_MOUSE_MOTION, raw_mode);
             c.glfwPollEvents();
-            resetMousePositionDelta();
         }
+        resetMousePositionDelta();
     }
 
     pub const MouseMode = enum(c_int) {
@@ -67,7 +67,7 @@ pub fn update() void {
 fn getPosition() Vec2 {
     var x: f64 = undefined;
     var y: f64 = undefined;
-    c.glfwGetCursorPos(window.handle, &x, &y);
+    c.glfwGetCursorPos(window.handle(), &x, &y);
     return Vec2.init(.{
         @floatCast(f32, x),
         @floatCast(f32, y),

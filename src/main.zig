@@ -20,15 +20,20 @@ pub fn main() !void {
     try demo.init();
     defer demo.deinit();
 
-    var eye = Vec3.init(.{5, 2, 3});
+    var eye = Vec3.init(.{0, 0, -5});
     var mouselook = input.MouseLook{};
     window.setMouseMode(.hidden_raw);
-
     while (window.update()) {
         if (window.keyWasPressed(.escape)) {
             window.close();
         }
         else {
+            if (window.keyWasPressed(.f_4)) {
+                window.setDisplayMode(switch (window.displayMode()) {
+                    .windowed => .borderless,
+                    .borderless => .windowed,
+                });
+            }
             const delta = @floatCast(f32, window.frameTime());
             mouselook.update();
             const view = mouselook.viewMatrix();

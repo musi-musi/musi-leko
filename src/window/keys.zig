@@ -70,8 +70,8 @@ const State = struct {
             const glfw_key = comptime GlfwKeyCode.fromKeyCode(key);
             const glfw_code = comptime glfw_key.glfwCode();
             switch (comptime glfw_key.keyType()) {
-                .keyboard => self.key_states[i] = @intToEnum(KeyState, c.glfwGetKey(window.handle, glfw_code)),
-                .mouse => self.key_states[i] = @intToEnum(KeyState, c.glfwGetMouseButton(window.handle, glfw_code)),
+                .keyboard => self.key_states[i] = @intToEnum(KeyState, c.glfwGetKey(window.handle(), glfw_code)),
+                .mouse => self.key_states[i] = @intToEnum(KeyState, c.glfwGetMouseButton(window.handle(), glfw_code)),
             }
         }
     }

@@ -3,11 +3,15 @@ const gl = @import("gl");
 
 pub const Handle = *c.GLFWwindow;
 
-pub var handle: Handle = undefined;
-pub var _width: u32 = 0;
-pub var _height: u32 = 0;
+var _handle: Handle = undefined;
+var _width: u32 = 0;
+var _height: u32 = 0;
+var _shape: WindowShape = undefined;
+var _display_mode: exports.DisplayMode = .windowed;
+var _vsync_mode: exports.VsyncMode = .enabled;
 
 pub const exports = struct {
+
 
     pub fn width() u32 {
         return _width;
@@ -18,11 +22,52 @@ pub const exports = struct {
     }
 
     pub fn close() void {
-        c.glfwSetWindowShouldClose(handle, c.GLFW_TRUE);
+        c.glfwSetWindowShouldClose(_handle, c.GLFW_TRUE);
     }
 
+    pub const DisplayMode = enum {
+        windowed,
+        borderless,
+    };
+
+    pub const VsyncMode = enum(c_int) {
+        disabled = 0,
+        enabled = 1,
+    };
+
+    pub fn setDisplayMode(mode: DisplayMode) void {
+        const monitor: *c.GLFWmonitor = c.glfwGetPrimaryMonitor().?;
+        const video_mode: *const c.GLFWvidmode = c.glfwGetVideoMode(monitor);
+        switch (mode) {
+            .windowed => {
+                c.glfwSetWindowMonitor(_handle, null, _shape.x, _shape.y, _shape.width, _shape.height, 0);
+            },
+            .borderless => {
+                saveWindowShape();
+                c.glfwSetWindowMonitor(_handle, monitor, 0, 0, video_mode.width, video_mode.height, video_mode.refreshRate);
+            },
+        }
+        _display_mode = mode;
+    }
+
+    pub fn setVsyncMode(mode: VsyncMode) void {
+        c.glfwSwapInterval(@enumToInt(mode));
+    }
+
+    pub fn displayMode() DisplayMode {
+        return _display_mode;
+    }
+    pub fn vsyncMode() VsyncMode {
+        return _vsync_mode;
+    }
 
 };
+
+
+pub fn handle() Handle {
+    return _handle;
+}
+
 
 pub const Error = error {
     WindowCreationFailed,
@@ -47,13 +92,14 @@ pub fn init(config: Config) !void {
     if (handle_opt == null) {
         return Error.WindowCreationFailed;
     }
-    handle = handle_opt.?;
-    c.glfwMakeContextCurrent(handle);
-    _ = c.glfwSetFramebufferSizeCallback(handle, frameBufferSizeCallback);
+    _handle = handle_opt.?;
+    c.glfwMakeContextCurrent(_handle);
+    _ = c.glfwSetFramebufferSizeCallback(_handle, frameBufferSizeCallback);
 
     gl.init();
     gl.viewport(0, 0, @intCast(c_int, _width), @intCast(c_int, _height));
 
+    saveWindowShape();
 }
 
 fn frameBufferSizeCallback(window: ?Handle, width_: c_int, height_: c_int) callconv(.C) void {
@@ -64,11 +110,23 @@ fn frameBufferSizeCallback(window: ?Handle, width_: c_int, height_: c_int) callc
 }
 
 pub fn deinit() void {
-    c.glfwDestroyWindow(handle);
+    c.glfwDestroyWindow(_handle);
 }
 
+pub const WindowShape = struct {
+    x: i32,
+    y: i32,
+    width: i32,
+    height: i32,
+};
+
 pub fn nextFrame() bool {
-    c.glfwSwapBuffers(handle);
+    c.glfwSwapBuffers(_handle);
     c.glfwPollEvents();
-    return c.glfwWindowShouldClose(handle) == 0;
+    return c.glfwWindowShouldClose(_handle) == 0;
+}
+
+fn saveWindowShape() void {
+    c.glfwGetWindowPos(_handle, &_shape.x, &_shape.y);
+    c.glfwGetFramebufferSize(_handle, &_shape.width, &_shape.height);
 }
