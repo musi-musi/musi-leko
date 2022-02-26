@@ -63,9 +63,9 @@ pub fn init() !void {
     
     shader = try Shader.init();
     
-    const width: usize = 32;
-    const height: usize = 32;
-    const data = comptime genTextureData(width, height);
+    const width: usize = 512;
+    const height: usize = 512;
+    const data = genTextureData(width, height);
 
     texture.alloc(width, height);
     texture.upload(width, height, &data);
@@ -195,15 +195,26 @@ fn vertPositionOffset(comptime cardinal: Cardinal) Vec3 {
 }
 
 fn genTextureData(comptime width: usize, comptime height: usize) [width * height]Texture.Pixel {
-    @setEvalBranchQuota(1000000);
     var result: [width * height]Texture.Pixel = undefined;
-    var rng = std.rand.DefaultPrng.init(0);
-    var random = rng.random();
-    for (result) |*pixel| {
-        pixel.*[0] = random.int(u8);
-        pixel.*[1] = random.int(u8);
-        pixel.*[2] = random.int(u8);
-        pixel.*[3] = 0xFF;
+    var perlin = nm.noise.Perlin2{};
+    var i: usize = 0;
+    var x: usize = 0;
+    const freq: f32 = 0.1;
+    while (x < width) : (x += 1) {
+        var y: usize = 0;
+        while (y < height) : (y += 1) {
+            const p = perlin.sample(.{
+                @intToFloat(f32, x) * freq,
+                @intToFloat(f32, y) * freq,
+            });
+            const v = std.math.clamp(p, -1, 1);
+            const byte = @floatToInt(u8, ((v + 1) / 2) * 255);
+            result[i][0] = byte;
+            result[i][1] = byte;
+            result[i][2] = byte;
+            result[i][3] = 0xFF;
+            i += 1;
+        }
     }
     return result;
 }
