@@ -4,11 +4,11 @@ const nm = @import("nm");
 const window = @import("window");
 const render = @import("render");
 const input = @import("input");
+const leko = @import("leko");
 
+const chunkmesh = render.leko.chunkmesh;
 
 const Vec3 = nm.Vec3;
-
-const demo = render.demos.cube;
 
 const speed: f32 = 3;
 
@@ -17,8 +17,36 @@ pub fn main() !void {
     try window.init(.{});
     defer window.deinit();
     
-    try demo.init();
-    defer demo.deinit();
+    try render.leko.init();
+    defer render.leko.deinit();
+
+    var chunk = leko.Chunk.init(nm.Vec3i.zero);
+
+    var perlin = nm.noise.Perlin3{};
+    const scale = 0.1;
+
+    for (chunk.id_array.items) |*id, i| {
+        const index = leko.LekoIndex.initI(i);
+        const pos = index.vector().cast(f32);
+        const sample = perlin.sample(pos.mulScalar(scale).v);
+        if (sample > 0) {
+            id.* = 1;
+        }
+        else {
+            id.* = 0;
+        }
+    }
+
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const allocator = gpa.allocator();
+
+    var mesh = chunkmesh.Mesh.init(&chunk);
+    defer mesh.deinit(allocator);
+
+    try mesh.generateData(allocator);
+    mesh.uploadData();
+    chunkmesh.bindMesh(&mesh);
+
 
     var eye = Vec3.init(.{0, 0, -5});
     var mouselook = input.MouseLook{};
@@ -46,8 +74,9 @@ pub fn main() !void {
             if (window.keyIsDown(.d)) eye = eye.add(right);
             if (window.keyIsDown(.space)) eye = eye.add(up);
             if (window.keyIsDown(.left_shift)) eye = eye.sub(up);
-            demo.setViewMatrix(nm.transform.createTranslate(eye.neg()).mul(view));
-            demo.draw();
+            chunkmesh.startDraw();
+            chunkmesh.setViewMatrix(nm.transform.createTranslate(eye.neg()).mul(view));
+            chunkmesh.drawMesh(&mesh);
         }
     }
 }

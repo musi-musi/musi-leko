@@ -8,3 +8,5 @@ pub const demos = struct {
 const shader = @import("shader.zig");
 
 pub usingnamespace shader;
+
+pub const leko = @import("leko/_.zig");

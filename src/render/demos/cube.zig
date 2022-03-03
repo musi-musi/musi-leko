@@ -24,6 +24,7 @@ const Shader = @import("../shader.zig").Shader(&.{
     },
     @embedFile("cube.vert"),
     @embedFile("cube.frag"),
+    &.{},
 );
 
 const Texture = gl.TextureRgba8(.texture_2d);

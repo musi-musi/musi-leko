@@ -1,5 +1,3 @@
-#version 450 core
-
 uniform sampler2D maintex;
 
 // in vec3 frag_color;
