@@ -80,15 +80,20 @@ fn addPkgs(step: *std.build.LibExeObjStep) void {
         .path = FileSource.relative("src/leko/_.zig"),
         .dependencies = &[_]Pkg{ nm },
     };
-    const render = Pkg {
-        .name = "render",
-        .path = FileSource.relative("src/render/_.zig"),
-        .dependencies = &[_]Pkg{ nm, gl, window, leko },
-    };
     const input = Pkg {
         .name = "input",
         .path = FileSource.relative("src/input/_.zig"),
         .dependencies = &[_]Pkg{ nm, window },
+    };
+    const session = Pkg {
+        .name = "session",
+        .path = FileSource.relative("src/session/_.zig"),
+        .dependencies = &[_]Pkg{ nm, window, leko, input },
+    };
+    const render = Pkg {
+        .name = "render",
+        .path = FileSource.relative("src/render/_.zig"),
+        .dependencies = &[_]Pkg{ nm, gl, window, leko, session },
     };
     step.addPackage(c);
     step.addPackage(nm);
@@ -97,4 +102,5 @@ fn addPkgs(step: *std.build.LibExeObjStep) void {
     step.addPackage(leko);
     step.addPackage(render);
     step.addPackage(input);
+    step.addPackage(session);
 }

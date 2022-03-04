@@ -8,10 +8,10 @@ pub fn Shader(comptime uniforms_: []const gl.Uniform, comptime vert_source_: [:0
 
         var headers_source_list: [:0]const u8 = fmt.comptimePrint("#version {d}{d}0 core\n", .{gl.config.version_major, gl.config.version_minor});
         for (headers_) |header_source, i| {
-            headers_source_list = fmt.comptimePrint("{s}\n #line 1 {d}\n{s}\n", .{headers_source_list, i + 1, header_source});
+            headers_source_list = fmt.comptimePrint("{s}\n#line 1 {d}\n{s}\n", .{headers_source_list, i + 1, header_source});
         }
-        const vert_source = fmt.comptimePrint("{s}\n #line 1 0\n{s}\n", .{headers_source_list, vert_source_});
-        const frag_source = fmt.comptimePrint("{s}\n #line 1 0\n{s}\n", .{headers_source_list, frag_source_});
+        const vert_source = fmt.comptimePrint("{s}\n#line 1 0\n{s}\n", .{headers_source_list, vert_source_});
+        const frag_source = fmt.comptimePrint("{s}\n#line 1 0\n{s}\n", .{headers_source_list, frag_source_});
 
         return struct {
 
