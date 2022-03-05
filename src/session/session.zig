@@ -20,7 +20,7 @@ pub const exports = struct {
 
     pub fn init() void {
 
-        _chunk = leko.Chunk.init(nm.Vec3i.zero);
+        _chunk.init(nm.Vec3i.zero);
 
         var perlin = nm.noise.Perlin3{};
         const scale = 0.1;

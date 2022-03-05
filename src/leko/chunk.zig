@@ -20,11 +20,8 @@ pub const Chunk = struct {
 
     const Self = @This();
 
-    pub fn init(position: Vec3i) Self {
-        return Self {
-            .position = position,
-            .id_array = undefined,
-        };
+    pub fn init(self: *Self, position: Vec3i) void {
+        self.position = position;
     }
 
 };
