@@ -17,7 +17,7 @@ void main() {
     vec2 uv = floor(frag_uv * resolution);
     bool checker1 = (uint(uv.x) % 2 == 0) != (uint(uv.y) % 2 == 0);
     bool checker4 = ((uint(uv.x) >> 2) % 2 == 0) != ((uint(uv.y) >> 2) % 2 == 0);
-    float color = mix(0.9, 1.0, float(checker1));
+    float color = mix(0.95, 1.0, float(checker1));
     color *= mix(0.85, 1.0, float(checker4));
     uv = (uv + vec2(0.5)) / resolution;
     float ao = mix(

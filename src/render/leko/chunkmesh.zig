@@ -42,6 +42,9 @@ const Array = gl.Array(struct {
 const Shader = shader.Shader(&.{
         gl.uniform("proj", .mat4),
         gl.uniform("view", .mat4),
+
+        gl.uniform("chunk_position", .vec3i),
+        
         gl.uniform("light", .vec3),
     },
     @embedFile("chunkmesh.vert"),
@@ -49,6 +52,7 @@ const Shader = shader.Shader(&.{
     &.{MeshData.createShaderHeader()},
 );
 
+pub usingnamespace exports;
 pub const exports = struct {
 
     pub fn init() !void {
@@ -84,6 +88,7 @@ pub const exports = struct {
 
     pub fn bindMesh(mesh: *const Mesh) void {
         _array.buffer_binds.base.bindBuffer(mesh.base_buffer);
+        _shader.uniforms.set("chunk_position", mesh.chunk.position.v);
     }
 
     pub fn drawMesh(mesh: *const Mesh) void {
@@ -95,7 +100,7 @@ pub const exports = struct {
         const height = window.height();
         const fov_rad: f32 = std.math.pi / 180.0 * 90.0;
         const aspect = @intToFloat(f32, width) / @intToFloat(f32, height);
-        return nm.transform.createPerspective(fov_rad, aspect, 0.001, 100);
+        return nm.transform.createPerspective(fov_rad, aspect, 0.001, 10000);
     }
 
     pub const Mesh = struct {
@@ -107,17 +112,15 @@ pub const exports = struct {
 
         const Self = @This();
 
-        pub fn init(chunk: *const Chunk) Self {
-            return Self {
-                .chunk = chunk,
-                .base_buffer = QuadBaseBuffer.init(),
-                .data = MeshData.init(),
-            };
+        pub fn init(self: *Self, chunk: *const Chunk) void {
+            self.chunk = chunk;
+            self.base_buffer = QuadBaseBuffer.init();
+            self.data = MeshData.init();
         }
 
         pub fn deinit(self: *Self, allocator: Allocator) void  {
-            self.base_buffer.deinit();
-            self.data.deinit(allocator);
+            defer self.base_buffer.deinit();
+            defer self.data.deinit(allocator);
         }
 
         pub fn generateData(self: *Self, allocator: Allocator) !void {

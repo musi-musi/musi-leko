@@ -7,38 +7,56 @@ const input = @import("input");
 const leko = @import("leko");
 
 const Vec3 = nm.Vec3;
+const Vec3i = nm.Vec3i;
 const Mat4 = nm.Mat4;
 
 const speed: f32 = 10;
 
-var _chunk: leko.Chunk = undefined;
+var _volume: leko.Volume = undefined;
 var _camera_pos: Vec3 = undefined;
 var _mouselook = input.MouseLook{};
 var _view_matrix: Mat4 = undefined;
 
+const Allocator = std.mem.Allocator;
+
 pub const exports = struct {
 
-    pub fn init() void {
+    pub fn init(allocator: Allocator) !void {
 
-        _chunk.init(nm.Vec3i.zero);
-
+        try _volume.init(allocator);
+        
         var perlin = nm.noise.Perlin3{};
         const scale = 0.1;
 
-        for (_chunk.id_array.items) |*id, i| {
-            const index = leko.LekoIndex.initI(i);
-            const pos = index.vector().cast(f32);
-            const sample = perlin.sample(pos.mulScalar(scale).v);
-            if (sample > 0) {
-                id.* = 1;
-            }
-            else {
-                id.* = 0;
+        const view_radius: i32 = 4;
+        var chunk_pos = Vec3i.fill(-view_radius);
+        while (chunk_pos.v[0] < view_radius) : (chunk_pos.v[0] += 1) {
+            chunk_pos.v[1] = -view_radius;
+            while (chunk_pos.v[1] < view_radius) : (chunk_pos.v[1] += 1) {
+                chunk_pos.v[2] = -view_radius;
+                while (chunk_pos.v[2] < view_radius) : (chunk_pos.v[2] += 1) {
+                    var chunk = try _volume.createChunk(chunk_pos);
+                    for (chunk.id_array.items) |*id, i| {
+                        const index = leko.LekoIndex.initI(i);
+                        const pos = chunk_pos.mulScalar(leko.Chunk.width).add(index.vector().cast(i32)).cast(f32);
+                        const sample = perlin.sample(pos.mulScalar(scale).v);
+                        if (sample > 0) {
+                            id.* = 1;
+                        }
+                        else {
+                            id.* = 0;
+                        }
+                    }
+                }
             }
         }
 
         _camera_pos = Vec3.init(.{0, 0, -5});
         window.setMouseMode(.hidden_raw);
+    }
+
+    pub fn deinit() void {
+        _volume.deinit();
     }
 
     pub fn update() void {
@@ -60,8 +78,8 @@ pub const exports = struct {
         return nm.transform.createTranslate(_camera_pos.neg()).mul(_view_matrix);
     }
 
-    pub fn chunk() *const leko.Chunk {
-        return &_chunk;
+    pub fn volume() *const leko.Volume {
+        return &_volume;
     }
 
 };

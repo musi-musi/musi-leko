@@ -11,13 +11,15 @@ pub fn main() !void {
     try window.init(.{});
     defer window.deinit();
     
-    session.init();
-
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
     
+    try session.init(allocator);
+    defer session.deinit();
+
+    
     try render.init(allocator);
-    defer render.deinit(allocator);
+    defer render.deinit();
 
     window.setMouseMode(.hidden_raw);
     while (window.update()) {

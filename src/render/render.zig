@@ -4,30 +4,31 @@ const leko = @import("leko/_.zig");
 
 const Allocator = std.mem.Allocator;
 
-const chunkmesh = leko.chunkmesh;
+const volume = leko.volume;
 
-var _mesh: chunkmesh.Mesh = undefined;
+var _model: volume.Model = undefined;
 
 pub const exports = struct {
 
     pub fn init(allocator: Allocator) !void {
-        try chunkmesh.init();
-        _mesh = chunkmesh.Mesh.init(session.chunk());
+        try volume.init();
 
-        try _mesh.generateData(allocator);
-        _mesh.uploadData();
-        chunkmesh.bindMesh(&_mesh);
+        try _model.init(allocator, session.volume());
+
+        var chunks = session.volume().chunks.valueIterator();
+
+        while (chunks.next()) |chunk| {
+            try _model.addChunk(chunk.*);
+        }
     }
 
-    pub fn deinit(allocator: Allocator) void {
-        chunkmesh.deinit();
-        _mesh.deinit(allocator);
+    pub fn deinit() void {
+        _model.deinit();
     }
 
     pub fn render() void {
-        chunkmesh.startDraw();
-        chunkmesh.setViewMatrix(session.viewMatrix());
-        chunkmesh.drawMesh(&_mesh);
+        volume.setViewMatrix(session.viewMatrix());
+        _model.render();
     }
 
 };

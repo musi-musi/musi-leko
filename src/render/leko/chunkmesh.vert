@@ -2,8 +2,10 @@ layout (location = 0) in uint base;
 
 uniform mat4 proj;
 uniform mat4 view;
-uniform vec3 light;
 
+uniform ivec3 chunk_position;
+
+uniform vec3 light;
 
 
 out float frag_light;
@@ -30,7 +32,7 @@ void main() {
     frag_ao.w = float(ao >> 6 & 0x2) / 3.0;
     frag_uv = cube_uvs[gl_VertexID];
     vec4 pos;
-    pos.xyz = position;
+    pos.xyz = position + vec3(chunk_position) * CHUNK_WIDTH;
     pos.w = 1;
     gl_Position = proj * view * pos;
 }
