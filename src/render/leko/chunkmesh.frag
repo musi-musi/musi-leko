@@ -1,6 +1,7 @@
 in float frag_light;
 in vec4 frag_ao;
 in vec2 frag_uv;
+in float frag_fog;
 
 out vec4 FragColor;
 
@@ -27,7 +28,6 @@ void main() {
     );
     ao = 1 - ao * ao_strength;
     float light = mix(1, frag_light, light_strength);
-    FragColor.xyz = vec3(color * ao * light);
-    // FragColor.xyz = vec3(ao * light);
+    FragColor.xyz = vec3(color * ao * light * (1 - frag_fog));
     FragColor.w = 1;
 }

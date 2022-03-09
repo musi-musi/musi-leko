@@ -133,9 +133,15 @@ pub const exports = struct {
         }
 
         pub fn uploadData(self: Self) void {
-            self.base_buffer.alloc(self.quad_count, .static_draw);
-            self.base_buffer.subData(self.data.base_middle.items, 0);
-            self.base_buffer.subData(self.data.base_border.items, self.data.base_middle.items.len);
+            if (self.quad_count > 0) {
+                self.base_buffer.alloc(self.quad_count, .static_draw);
+                if (self.data.base_middle.items.len > 0) {
+                    self.base_buffer.subData(self.data.base_middle.items, 0);
+                }
+                if (self.data.base_border.items.len > 0) {
+                    self.base_buffer.subData(self.data.base_border.items, self.data.base_middle.items.len);
+                }
+            }
         }
 
     };

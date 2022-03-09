@@ -7,10 +7,14 @@ uniform ivec3 chunk_position;
 
 uniform vec3 light;
 
+uniform float fog_start = 16;
+uniform float fog_end = 48;
+
 
 out float frag_light;
 out vec4 frag_ao;
 out vec2 frag_uv;
+out float frag_fog;
 
 void main() {
     uint b = base;
@@ -35,4 +39,10 @@ void main() {
     pos.xyz = position + vec3(chunk_position) * CHUNK_WIDTH;
     pos.w = 1;
     gl_Position = proj * view * pos;
+
+    vec4 eye = inverse(view) * vec4(0, 0, 0, 1);
+    vec3 eye_to_pos = abs(pos.xyz - eye.xyz);
+
+    float dist = max(max(eye_to_pos.x, eye_to_pos.y), eye_to_pos.z);
+    frag_fog = clamp((dist - fog_start) / (fog_end - fog_start), 0, 1);
 }
