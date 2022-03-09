@@ -80,7 +80,7 @@ pub fn Buffer(comptime target_: BufferTarget, comptime Element_: type) type {
         pub fn subData(self: Self, data_slice: []const Element, offset: usize) void {
             const ptr = @ptrCast(*const anyopaque, data_slice.ptr);
             const size = @intCast(c_longlong, @sizeOf(Element) * data_slice.len);
-            c.glNamedBufferSubData(self.handle, @intCast(c_longlong, offset), size, ptr);
+            c.glNamedBufferSubData(self.handle, @intCast(c_longlong, offset) * @sizeOf(Element), size, ptr);
         }
 
         /// replace all data in the buffer

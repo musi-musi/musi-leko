@@ -4,7 +4,7 @@ in vec2 frag_uv;
 
 out vec4 FragColor;
 
-uniform float light_strength = 1;
+uniform float light_strength = 0.5;
 uniform float ao_strength = 0.7;
 uniform float resolution = 8.0;
 
@@ -15,9 +15,9 @@ uniform float resolution = 8.0;
 // 2 --- 3   + u ->
 void main() {
     vec2 uv = floor(frag_uv * resolution);
-    bool checker1 = (uint(uv.x) % 2 == 0) != (uint(uv.y) % 2 == 0);
+    // bool checker1 = (uint(uv.x) % 2 == 0) != (uint(uv.y) % 2 == 0);
     bool checker4 = ((uint(uv.x) >> 2) % 2 == 0) != ((uint(uv.y) >> 2) % 2 == 0);
-    float color = mix(0.95, 1.0, float(checker1));
+    float color = 1; //mix(0.95, 1.0, float(checker1));
     color *= mix(0.85, 1.0, float(checker4));
     uv = (uv + vec2(0.5)) / resolution;
     float ao = mix(
@@ -26,7 +26,8 @@ void main() {
         uv.y
     );
     ao = 1 - ao * ao_strength;
-    float light = 1 - frag_light * light_strength;
+    float light = mix(1, frag_light, light_strength);
     FragColor.xyz = vec3(color * ao * light);
+    // FragColor.xyz = vec3(ao * light);
     FragColor.w = 1;
 }

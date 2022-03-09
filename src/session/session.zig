@@ -28,7 +28,7 @@ pub const exports = struct {
         var perlin = nm.noise.Perlin3{};
         const scale = 0.1;
 
-        const view_radius: i32 = 4;
+        const view_radius: i32 = 2;
         var chunk_pos = Vec3i.fill(-view_radius);
         while (chunk_pos.v[0] < view_radius) : (chunk_pos.v[0] += 1) {
             chunk_pos.v[1] = -view_radius;
@@ -51,7 +51,7 @@ pub const exports = struct {
             }
         }
 
-        _camera_pos = Vec3.init(.{0, 0, -5});
+        _camera_pos = Vec3.init(.{0, 0, 0});
         window.setMouseMode(.hidden_raw);
     }
 

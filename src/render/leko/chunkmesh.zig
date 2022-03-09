@@ -8,7 +8,7 @@ const shader = @import("../shader.zig");
 
 const Vec3 = nm.Vec3;
 
-const Cardinal = nm.Cardinal3;
+const Cardinal3 = nm.Cardinal3;
 const Allocator = std.mem.Allocator;
 const Chunk = leko.Chunk;
 const LekoIndex = leko.LekoIndex;
@@ -27,7 +27,7 @@ var _shader: Shader = undefined;
 /// ```
 ///  base = 0b 000000 xxxxx yyyyy zzzzz nnn aaaaaaaa
 ///  - xyz  position of cube
-///  - n    0-5 face index; Cardinal
+///  - n    0-5 face index; Cardinal3
 ///  - a    ao strength per vertex, packed 0b33221100
 pub const QuadBase = struct {
     base: u32,
@@ -62,7 +62,7 @@ pub const exports = struct {
         _array.bindIndexBuffer(_index_buffer);
         _shader = try Shader.init();
 
-        const light = Vec3.init(.{1, 2, 3}).norm();
+        const light = Vec3.init(.{1, 3, 2}).norm();
         _shader.uniforms.set("light", light.v);
     }
 
@@ -125,12 +125,17 @@ pub const exports = struct {
 
         pub fn generateData(self: *Self, allocator: Allocator) !void {
             try self.data.generateMiddle(allocator, self.chunk);
-            self.quad_count = self.data.base_middle.items.len;
+            try self.data.generateBorder(allocator, self.chunk);
+            self.quad_count = (
+                self.data.base_middle.items.len +
+                self.data.base_border.items.len
+            );
         }
 
         pub fn uploadData(self: Self) void {
             self.base_buffer.alloc(self.quad_count, .static_draw);
             self.base_buffer.subData(self.data.base_middle.items, 0);
+            self.base_buffer.subData(self.data.base_border.items, self.data.base_middle.items.len);
         }
 
     };
@@ -141,57 +146,101 @@ pub const exports = struct {
 pub const MeshData = struct {
 
     base_middle: std.ArrayListUnmanaged(QuadBase),
+    base_border: std.ArrayListUnmanaged(QuadBase),
 
     const Self = @This();
+
+    const Part = enum {
+        middle, border,
+    };
 
     pub fn init() Self {
         return Self {
             .base_middle = .{},
+            .base_border = .{},
         };
     }
         
     pub fn deinit(self: *Self, allocator: Allocator) void {
         self.base_middle.deinit(allocator);
+        self.base_border.deinit(allocator);
     }
 
     pub fn generateMiddle(self: *Self, allocator: Allocator, chunk: *const leko.Chunk) !void {
         self.base_middle.shrinkRetainingCapacity(0);
-        const cardinals = comptime std.enums.values(Cardinal);
+        const cardinals = comptime std.enums.values(Cardinal3);
         inline for (cardinals) |card_n| {
-            const card_u = comptime cardU(card_n);
-            const card_v = comptime cardV(card_n);
-            var u: u32 = 1;
-            while (u < Chunk.width - 1) : (u += 1) {
-                var v: u32 = 1;
-                while (v < Chunk.width - 1) : (v += 1) {
-                    const u_index = LekoIndex.single(u32, u, comptime card_u.axis());
-                    const v_index = LekoIndex.single(u32, v, comptime card_v.axis());
-                    const n_index = switch(comptime card_n.sign()) {
-                        .positive => LekoIndex.single(u32, Chunk.width - 1, comptime card_n.axis()),
-                        .negative => LekoIndex.single(u32, 0, comptime card_n.axis()),
-                    };
-                    var index = LekoIndex{ .v = u_index.v + v_index.v + n_index.v };
-                    var is_opaque = opacity(chunk, index) == .solid;
-                    var neighbor_is_opaque = is_opaque;
-                    index = index.decr(card_n);
-                    var n: u32 = 1;
-                    while (n < Chunk.width) : (n += 1) {
-                        is_opaque = opacity(chunk, index) == .solid;
-                        if (is_opaque and !neighbor_is_opaque) {
-                            try appendQuadBase(allocator, &self.base_middle, index, card_n, computeAO(index, card_n, chunk));
-                        }
-                        neighbor_is_opaque = is_opaque;
-                        index = index.decr(card_n);
+            var face_iter = FaceIterator(1, card_n){};
+            while (face_iter.next()) |index|{
+                var cursor = Cursor.init(chunk, index);
+                var is_opaque = opacity(cursor) == .solid;
+                var neighbor_is_opaque = is_opaque;
+                cursor = cursor.decr(.middle, card_n).?;
+                var n: u32 = 1;
+                while (n < Chunk.width - 1) : (n += 1) {
+                    is_opaque = opacity(cursor) == .solid;
+                    if (is_opaque and !neighbor_is_opaque) {
+                        try appendQuadBase(allocator, &self.base_middle, .middle, cursor, card_n);
                     }
+                    neighbor_is_opaque = is_opaque;
+                    cursor = cursor.decr(.middle, card_n).?;
                 }
             }
         }
     }
 
-    fn appendQuadBase(allocator: Allocator, list: *std.ArrayListUnmanaged(QuadBase), position: LekoIndex, comptime normal: Cardinal, ao: u8) !void {
+    pub fn generateBorder(self: *Self, allocator: Allocator, chunk: *const leko.Chunk) !void {
+        self.base_border.shrinkRetainingCapacity(0);
+        const max = Chunk.width - 1;
+        
+        inline for (.{0, max}) |x| {
+            for (range) |y| {
+                for (range) |z| {
+                    try self.appendBorderLekoBase(allocator, chunk, x, y, z);
+                }
+            }
+        }
+
+        for (range[1..max]) |x| {
+            inline for (.{0, max}) |y| {
+                for (range) |z| {
+                    try self.appendBorderLekoBase(allocator, chunk, x, y, z);
+                }
+            }
+            for (range[1..max]) |y| {
+                inline for (.{0, max}) |z| {
+                    try self.appendBorderLekoBase(allocator, chunk, x, y, z);
+                }
+            }
+        }
+        
+    }
+
+    const range = blk: {
+        var result: [Chunk.width]u32 = undefined;
+        for (result) |*x, i| {
+            x.* = i;
+        }
+        break :blk result;
+    };
+
+    fn appendQuadBase(allocator: Allocator, list: *std.ArrayListUnmanaged(QuadBase), comptime part: Part, cursor: Cursor, comptime normal: Cardinal3) !void {
         return try list.append(allocator, QuadBase {
-            .base = (@as(u32, position.v) << 3 | comptime @enumToInt(normal)) << 8 | ao,
+            .base = (@as(u32, cursor.position.v) << 3 | comptime @enumToInt(normal)) << 8 | computeAO(cursor, part, normal),
         });
+    }
+
+    fn appendBorderLekoBase(self: *Self, allocator: Allocator, chunk: *const Chunk, x: u32, y: u32, z: u32) !void{ 
+        var cursor = Cursor.init(chunk, LekoIndex.init(u32, .{x, y, z}));
+        if (opacity(cursor) == .solid) {
+            inline for (comptime std.enums.values(Cardinal3)) |normal| {
+                if (cursor.incr(.border, normal)) |neighbor| {
+                    if (opacity(neighbor) == .transparent) {
+                        try appendQuadBase(allocator, &self.base_border, .border, cursor, normal);
+                    }
+                }
+            }
+        }
     }
 
     const Opacity = enum(u8) {
@@ -199,14 +248,71 @@ pub const MeshData = struct {
         solid = 1,
     };
 
-    fn opacity(chunk: *const Chunk, index: LekoIndex) Opacity {
-        return switch (chunk.id_array.get(index)) {
+    fn opacity(cursor: Cursor) Opacity {
+        return switch (cursor.chunk.id_array.get(cursor.position)) {
             0 => .transparent,
             else => .solid,
         };
     }
 
-    fn cardU(normal: Cardinal) Cardinal {
+    fn FaceIterator(comptime start: u32, comptime normal: Cardinal3) type {
+        return struct {
+
+            u: u32 = start,
+            v: u32 = start,
+            
+            const end = Chunk.width - start;
+
+            const card_u = cardU(normal);
+            const card_v = cardV(normal);
+
+            pub fn next(self: *@This()) ?LekoIndex {
+                if (self.v >= end) {
+                    return null;
+                }
+                else {
+                    const result = self.index();
+                    self.u += 1;
+                    if (self.u >= end) {
+                        self.u = start;
+                        self.v += 1;
+                    }
+                    return result;
+                }
+            }
+
+            fn index(self: @This()) LekoIndex {
+                const u = LekoIndex.single(u32, self.u, comptime card_u.axis());
+                const v = LekoIndex.single(u32, self.v, comptime card_v.axis());
+                const n = LekoIndex.edge(u32, 0, normal);
+                return .{
+                    .v = u.v + v.v + n.v
+                };
+            }
+
+        };
+
+    }
+
+    // fn EdgeIterator(
+    //     comptime start: u32, comptime end: u32,
+    //     comptime normal: Cardinal3,
+    //     comptime edge_u: Cardinal3,
+    //     comptime edge_v: Cardinal3,
+    // ) type {
+
+    //     return struct {
+
+    //         x: u32 = start,
+
+    //         pub fn next(self: *@This()) ?LekoIndex {
+    //             return null;
+    //         }
+
+    //     };
+    // }
+
+    fn cardU(normal: Cardinal3) Cardinal3 {
         return switch (normal) {
             .x_pos => .z_neg,
             .x_neg => .z_pos,
@@ -217,7 +323,7 @@ pub const MeshData = struct {
         };
     }
 
-    fn cardV(normal: Cardinal) Cardinal {
+    fn cardV(normal: Cardinal3) Cardinal3 {
         return switch (normal) {
             .x_pos => .y_pos,
             .x_neg => .y_pos,
@@ -228,31 +334,47 @@ pub const MeshData = struct {
         };
     }
 
-    fn computeAO(position: LekoIndex, comptime n: Cardinal, chunk: *const Chunk) u8 {
-        const u = comptime cardU(n);
-        const v = comptime cardV(n);
-        var p = position.incr(n);
+    fn computeAO(cursor: Cursor, comptime part: Part, comptime normal: Cardinal3) u8 {
+        const u = comptime cardU(normal);
+        const v = comptime cardV(normal);
+
+        var c = cursor;
+
+        c = c.incr(part, normal) orelse return 0;
+        
+
+        const Move = struct {
+            sign: enum { incr, decr },
+            direction: Cardinal3,
+        };
+
+        const moves = [8]Move {
+            .{ .sign = .decr, .direction = u },
+            .{ .sign = .incr, .direction = v },
+            .{ .sign = .incr, .direction = u },
+            .{ .sign = .incr, .direction = u },
+            .{ .sign = .decr, .direction = v },
+            .{ .sign = .decr, .direction = v },
+            .{ .sign = .decr, .direction = u },
+            .{ .sign = .decr, .direction = u },
+        };
+
         var neighbors: u8 = 0;
-        p = p.decr(u);
-        neighbors |= @enumToInt(opacity(chunk, p)) << 0;
-        p = p.incr(v);
-        neighbors |= @enumToInt(opacity(chunk, p)) << 1;
-        p = p.incr(u);
-        neighbors |= @enumToInt(opacity(chunk, p)) << 2;
-        p = p.incr(u);
-        neighbors |= @enumToInt(opacity(chunk, p)) << 3;
-        p = p.decr(v);
-        neighbors |= @enumToInt(opacity(chunk, p)) << 4;
-        p = p.decr(v);
-        neighbors |= @enumToInt(opacity(chunk, p)) << 5;
-        p = p.decr(u);
-        neighbors |= @enumToInt(opacity(chunk, p)) << 6;
-        p = p.decr(u);
-        neighbors |= @enumToInt(opacity(chunk, p)) << 7;
+        inline for (moves) |move, i| {
+            switch (part) {
+                .middle => {},
+                .border => {},
+            }
+            switch (move.sign) {
+                .incr => c = c.incr(part, move.direction) orelse return 0,
+                .decr => c = c.decr(part, move.direction) orelse return 0,
+            }
+            neighbors |= @enumToInt(opacity(c)) << i;
+        }
         return ao_table[neighbors];
     }
 
-    ///```
+    /// ```
     ///  | 1 |  2  | 3 |
     ///  | - 0 --- 1 - |
     ///  |   | \   |   |    ^
@@ -287,6 +409,74 @@ pub const MeshData = struct {
         break :blk table;
     };
 
+    const Cursor = struct {
+        
+        chunk: *const Chunk,
+        position: LekoIndex,
+
+        pub fn init(chunk: *const Chunk, position: LekoIndex) Cursor {
+            return .{
+                .chunk = chunk,
+                .position = position,
+            };
+        }
+
+        pub fn incr(cursor: Cursor, comptime part: Part, comptime direction: Cardinal3) ?Cursor {
+            var result = cursor;
+            switch (part) {
+                .middle => {
+                    result.position = result.position.incr(direction);
+                },
+                .border => {
+                    const pos = direction;
+                    const neg = comptime direction.neg();
+                    if (result.position.isEdge(pos)) {
+                        if (result.chunk.neighbor(pos)) |neighbor| {
+                            result.chunk = neighbor;
+                            result.position = result.position.toEdge(neg);
+                        }
+                        else {
+                            return null;
+                        }
+                    }
+                    else {
+                        result.position = result.position.incr(pos);
+                    }
+                }
+            }
+            return result;
+        }
+
+        pub fn decr(cursor: Cursor, comptime part: Part, comptime direction: Cardinal3) ?Cursor {
+            var result = cursor;
+            switch (part) {
+                .middle => {
+                    result.position = result.position.decr(direction);
+                },
+                .border => {
+                    const pos = direction;
+                    const neg = comptime direction.neg();
+                    if (result.position.isEdge(neg)) {
+                        if (result.chunk.neighbor(neg)) |neighbor| {
+                            result.chunk = neighbor;
+                            result.position = result.position.toEdge(pos);
+                        }
+                        else {
+                            return null;
+                        }
+                    }
+                    else {
+                        result.position = result.position.decr(pos);
+                    }
+                }
+            }
+            return result;
+        }
+
+
+
+
+    };
 
     fn createShaderHeader() [:0]const u8 {
         const Context = struct {
@@ -295,7 +485,7 @@ pub const MeshData = struct {
                 try w.print("#define CHUNK_WIDTH {d}\n", .{Chunk.width});
                 try w.print("#define CHUNK_WIDTH_BITS {d}\n", .{Chunk.width_bits});
                 try w.writeAll("const vec3 cube_normals[6] = vec3[6](");
-                for (std.enums.values(Cardinal)) |card_n, i| {
+                for (std.enums.values(Cardinal3)) |card_n, i| {
                     if (i != 0) {
                         try w.writeAll(", ");
                     }
@@ -311,7 +501,7 @@ pub const MeshData = struct {
                 try w.writeAll("vec2(0, 1), vec2(1, 1), vec2(0, 0), vec2(1, 0)");
                 try w.writeAll(");\n");
                 try w.writeAll("const vec3 cube_positions[6][4] = vec3[6][4](");
-                for (std.enums.values(Cardinal)) |card_n, i| {
+                for (std.enums.values(Cardinal3)) |card_n, i| {
                     if (i != 0) {
                         try w.writeAll(",");
                     }
@@ -349,7 +539,7 @@ pub const MeshData = struct {
                 try w.writeAll("\n);\n");
             }
 
-            fn vertPositionOffset(comptime cardinal: Cardinal) Vec3 {
+            fn vertPositionOffset(comptime cardinal: Cardinal3) Vec3 {
                 switch (cardinal.sign()) {
                     .positive => return Vec3.unit(cardinal.axis()),
                     .negative => return Vec3.zero,

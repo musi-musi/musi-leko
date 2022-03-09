@@ -34,7 +34,7 @@ pub const Chunk = struct {
     }
 
     pub fn neighbor(self: Self, comptime direction: Cardinal3) ?*Self {
-        return self.neighbors(@enumToInt(direction));
+        return self.neighbors[@enumToInt(direction)];
     }
 
 };
@@ -69,10 +69,13 @@ pub const LekoIndex = struct {
 
     const Self = @This();
 
+    pub const zero = Self { .v = 0 };
+
     pub fn init(comptime T: type, value: [3]T) Self {
         var self: Self = .{};
-        inline for (value) |v| {
-            self.v = (self.v << Chunk.width_bits) | @intCast(Width, v);
+        comptime var i = 0;
+        inline while (i < 3) : (i += 1) {
+            self.v = (self.v << Chunk.width_bits) | @intCast(Width, value[i]);
         }
         return self;
     }
@@ -83,11 +86,42 @@ pub const LekoIndex = struct {
         };
     }
 
-    pub fn single(comptime T: type, value: T, comptime axis: nm.Axis3) Self {
-        return Self {
-            .v = @intCast(Value, (value << (Chunk.width_bits * (2 - @enumToInt(axis))))),
+    pub fn get(self: Self, comptime axis: nm.Axis3) Width {
+        return @truncate(Width, self.v >> (Chunk.width_bits * (2 - @enumToInt(axis))));
+    }
+
+
+    pub fn isEdge(self: Self, comptime direction: nm.Cardinal3) bool {
+        const w: Width = @intCast(Width, Chunk.width - 1);
+        return switch (comptime direction.sign()) {
+            .positive => self.get(comptime direction.axis()) == w,
+            .negative => self.get(comptime direction.axis()) == 0,
         };
     }
+
+    /// move this index to the edge of the chunk in `direction`
+    pub fn toEdge(self: Self, comptime direction: nm.Cardinal3) Self {
+        const w: Width = @intCast(Width, Chunk.width - 1);
+        return switch (comptime direction.sign()) {
+            .positive => .{ .v = self.v | single(Width, w, comptime direction.axis()).v},
+            .negative => .{ .v = self.v & ~single(Width, w, comptime direction.axis()).v},
+        };
+    }
+
+    pub fn edge(comptime T: type, offset: T, comptime direction: nm.Cardinal3) Self {
+        const w: Width = @intCast(Width, Chunk.width - 1);
+        return switch (comptime direction.sign()) {
+            .positive => .{ .v = single(u32, w - offset, comptime direction.axis()).v},
+            .negative => .{ .v = single(u32, offset, comptime direction.axis()).v},
+        };
+    }
+
+    pub fn single(comptime T: type, value: T, comptime axis: nm.Axis3) Self {
+        return Self {
+            .v = @intCast(Value, value) << (Chunk.width_bits * (2 - @enumToInt(axis))),
+        };
+    }
+
 
     pub fn vector(self: Self) Vector {
         return Vector.init(.{
@@ -100,7 +134,7 @@ pub const LekoIndex = struct {
     /// increment this index one cell in a cardinal direction
     /// trying to increment out of bounds is UB, only use when in bounds
     pub fn incr(self: Self, comptime card: nm.Cardinal3) Self {
-        const w = @bitCast(Width, @as(IWidth, -1));
+        const w: Width = @intCast(Width, Chunk.width - 1);
         const offset = comptime switch (card) {
             .x_pos => init(Width, .{1, 0, 0}),
             .x_neg => init(Width, .{w, 0, 0}),
