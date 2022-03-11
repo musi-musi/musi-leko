@@ -12,8 +12,6 @@ pub fn ThreadGroup(comptime Item_: type) type {
         item_queue: Queue,
         threads: []Thread,
         process_item_fn: ProcessItemFn,
-        /// the number of threads currently inside `process_item_fn`
-        active_thread_count: u32 = 0,
         is_joining: bool = false,
 
         pub const Item = Item_;
@@ -45,12 +43,7 @@ pub fn ThreadGroup(comptime Item_: type) type {
         }
 
         pub fn join(self: *Self) void {
-            while (self.active_thread_count > 0) { 
-                std.log.info("{}", .{self.active_thread_count});
-                std.os.sched_yield() catch { std.atomic.spinLoopHint(); };
-            }
             self.is_joining = true;
-            // @atomicStore(bool, &self.is_joining, true, .Monotonic);
             for (self.threads) |thread| {
                 thread.join();
             }
@@ -71,15 +64,7 @@ pub fn ThreadGroup(comptime Item_: type) type {
                     return;
                 }
                 if (self.item_queue.dequeue()) |item| {
-                    var atc = @atomicLoad(u32, &self.active_thread_count, .Acquire);
-                    atc += 1;
-                    @atomicStore(u32, &self.active_thread_count, atc, .Release);
-                    
                     try self.process_item_fn(self, item, thread_index);
-                    
-                    atc = @atomicLoad(u32, &self.active_thread_count, .Acquire);
-                    atc -= 1;
-                    @atomicStore(u32, &self.active_thread_count, atc, .Release);
                 }
             }
         }
