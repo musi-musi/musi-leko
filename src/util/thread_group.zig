@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const AtomicQueue = @import("atomicqueue.zig").AtomicQueue;
+const AtomicQueue = @import("atomic_queue.zig").AtomicQueue;
 
 const Thread = std.Thread;
 const Allocator = std.mem.Allocator;

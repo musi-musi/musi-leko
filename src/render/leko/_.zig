@@ -1,11 +1,11 @@
    
-pub const chunkmesh = @import("chunkmesh.zig").exports;
+pub const chunk_mesh = @import("chunk_mesh.zig").exports;
 pub const volume = @import("volume.zig").exports;
 
 pub fn init() !void {
-    try chunkmesh.init();
+    try chunk_mesh.init();
 }
 
 pub fn deinit() void {
-    chunkmesh.deinit();
+    chunk_mesh.deinit();
 }

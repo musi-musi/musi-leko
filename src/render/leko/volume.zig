@@ -2,11 +2,11 @@ const std = @import("std");
 const nm = @import("nm");
 const leko = @import("leko");
 
-const chunkmesh = @import("chunkmesh.zig");
+const chunk_mesh = @import("chunk_mesh.zig");
 
 const Volume = leko.Volume;
 const Chunk = leko.Chunk;
-const ChunkMesh = chunkmesh.Mesh;
+const ChunkMesh = chunk_mesh.Mesh;
 
 const Allocator = std.mem.Allocator;
 
@@ -14,15 +14,15 @@ pub usingnamespace exports;
 pub const exports = struct {
 
     pub fn init() !void {
-        try chunkmesh.init();
+        try chunk_mesh.init();
     }
 
     pub fn deinit() void {
-        chunkmesh.deinit();
+        chunk_mesh.deinit();
     }
 
     pub fn setViewMatrix(view: nm.Mat4) void {
-        chunkmesh.setViewMatrix(view);
+        chunk_mesh.setViewMatrix(view);
     }
     
     pub const Model = struct {
@@ -62,10 +62,10 @@ pub const exports = struct {
 
 
         pub fn render(self: Self) void {
-            chunkmesh.startDraw();
+            chunk_mesh.startDraw();
             for (self.chunk_meshes.items) |mesh| {
-                chunkmesh.bindMesh(mesh);
-                chunkmesh.drawMesh(mesh);
+                chunk_mesh.bindMesh(mesh);
+                chunk_mesh.drawMesh(mesh);
             }
         }
 

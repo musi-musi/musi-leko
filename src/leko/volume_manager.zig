@@ -59,7 +59,7 @@ pub const VolumeManager = struct {
                 }
             }
             for (chunk_list.items) |chunk| {
-                self.volume.deleteChunk(chunk.position);
+                self.volume.deinitChunk(chunk.position);
             }
             chunk_list.clearRetainingCapacity();
             var x = load_min.v[0];
@@ -70,7 +70,7 @@ pub const VolumeManager = struct {
                     while (z < load_max.v[2]) : (z += 1) {
                         const pos = Vec3i.init(.{x, y, z});
                         if (!self.volume.chunks.contains(pos)) {
-                            const chunk = try self.volume.createChunk(pos);
+                            const chunk = try self.volume.initChunk(pos);
                             chunk.state = .loading;
                             try chunk_list.append(chunk);
                         }

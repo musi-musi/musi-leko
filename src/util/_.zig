@@ -1,7 +1,7 @@
-const atomicqueue = @import("atomicqueue.zig");
-const threadgroup = @import("threadgroup.zig");
+const atomic_queue = @import("atomic_queue.zig");
+const thread_group = @import("thread_group.zig");
 const pool = @import("pool.zig");
 
-pub usingnamespace atomicqueue;
-pub usingnamespace threadgroup;
+pub usingnamespace atomic_queue;
+pub usingnamespace thread_group;
 pub usingnamespace pool;
