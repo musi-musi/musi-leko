@@ -30,10 +30,10 @@ void main() {
     position += cube_positions[n][gl_VertexID];
     vec3 normal = cube_normals[n];
     frag_light = abs(dot(normal, light));
-    frag_ao.x = float(ao >> 0 & 0x2) / 3.0;
-    frag_ao.y = float(ao >> 2 & 0x2) / 3.0;
-    frag_ao.z = float(ao >> 4 & 0x2) / 3.0;
-    frag_ao.w = float(ao >> 6 & 0x2) / 3.0;
+    frag_ao.x = (3 - float(ao >> 0 & 0x3)) / 3.0;
+    frag_ao.y = (3 - float(ao >> 2 & 0x3)) / 3.0;
+    frag_ao.z = (3 - float(ao >> 4 & 0x3)) / 3.0;
+    frag_ao.w = (3 - float(ao >> 6 & 0x3)) / 3.0;
     frag_uv = cube_uvs[gl_VertexID];
     vec4 pos;
     pos.xyz = position + vec3(chunk_position) * CHUNK_WIDTH;
@@ -43,6 +43,7 @@ void main() {
     vec4 eye = inverse(view) * vec4(0, 0, 0, 1);
     vec3 eye_to_pos = abs(pos.xyz - eye.xyz);
 
-    float dist = max(max(eye_to_pos.x, eye_to_pos.y), eye_to_pos.z);
+    // float dist = max(max(eye_to_pos.x, eye_to_pos.y), eye_to_pos.z);
+    float dist = length(eye_to_pos);
     frag_fog = clamp((dist - fog_start) / (fog_end - fog_start), 0, 1);
 }

@@ -2,6 +2,7 @@ const std = @import("std");
 const nm = @import("nm");
 
 const chunk_ = @import("chunk.zig");
+const util = @import("util");
 
 const Chunk = chunk_.Chunk;
 
@@ -16,23 +17,28 @@ pub const Volume = struct {
 
     allocator: Allocator,
     chunks: Chunks,
+    chunk_pool: ChunkPool,
 
     pub const Chunks = ChunkPosHashMap(*Chunk);
 
+    pub const ChunkPool = util.Pool(Chunk);
+
     const Self = @This();
 
-    pub fn init(self: *Self, allocator: Allocator) !void  {
+    pub fn init(self: *Self, allocator: Allocator, initial_chunk_capacity: usize) !void  {
         self.allocator = allocator;
         self.chunks = Chunks.init(allocator);
+        try self.chunk_pool.init(allocator, initial_chunk_capacity);
     }
 
     pub fn deinit(self: *Self) void {
         var chunks = self.chunks.valueIterator();
         while (chunks.next()) |chunk| {
             chunk.*.deinit();
-            self.allocator.destroy(chunk.*);
+            self.chunk_pool.checkIn(chunk.*);
         }
         self.chunks.deinit();
+        self.chunk_pool.deinit();
     }
 
     pub fn createChunk(self: *Self, chunk_pos: Vec3i) !*Chunk {
@@ -40,7 +46,7 @@ pub const Volume = struct {
             return existing;
         }
         else {
-            const chunk = try self.allocator.create(Chunk);
+            const chunk = try self.chunk_pool.checkOut();
             chunk.init(chunk_pos);
             try self.chunks.put(chunk_pos, chunk);
             inline for (comptime std.enums.values(Cardinal3)) |direction| {
@@ -57,12 +63,13 @@ pub const Volume = struct {
     pub fn deleteChunk(self: *Self, chunk_pos: Vec3i) void {
         if (self.chunks.get(chunk_pos)) |chunk| {
             inline for (comptime std.enums.values(Cardinal3)) |direction| {
-                if (chunk.neighbor[direction]) |neighbor| {
+                if (chunk.neighbor(direction)) |neighbor| {
                     neighbor.neighbors[@enumToInt(comptime direction.neg())] = null;
                 }
             }
+            _ = self.chunks.remove(chunk_pos);
             chunk.deinit();
-            self.allocator.destroy(chunk);
+            self.chunk_pool.checkIn(chunk);
         }
     }
 

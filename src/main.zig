@@ -34,7 +34,7 @@ pub fn main() !void {
                 });
             }
         }
-        session.update();
-        render.render();
+        try session.update();
+        // render.render();
     }
 }

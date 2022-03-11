@@ -65,6 +65,10 @@ fn addPkgs(step: *std.build.LibExeObjStep) void {
         .name = "nm",
         .path = FileSource.relative("src/nanpa-musi/_.zig"),
     };
+    const util = Pkg {
+        .name = "util",
+        .path = FileSource.relative("src/util/_.zig"),
+    };
     const gl = Pkg {
         .name = "gl",
         .path = FileSource.relative("src/gl/_.zig"),
@@ -78,7 +82,7 @@ fn addPkgs(step: *std.build.LibExeObjStep) void {
     const leko = Pkg {
         .name = "leko",
         .path = FileSource.relative("src/leko/_.zig"),
-        .dependencies = &[_]Pkg{ nm },
+        .dependencies = &[_]Pkg{ nm, util },
     };
     const input = Pkg {
         .name = "input",
@@ -88,19 +92,20 @@ fn addPkgs(step: *std.build.LibExeObjStep) void {
     const session = Pkg {
         .name = "session",
         .path = FileSource.relative("src/session/_.zig"),
-        .dependencies = &[_]Pkg{ nm, window, leko, input },
+        .dependencies = &[_]Pkg{ nm, window, leko, input, util },
     };
     const render = Pkg {
         .name = "render",
         .path = FileSource.relative("src/render/_.zig"),
-        .dependencies = &[_]Pkg{ nm, gl, window, leko, session },
+        .dependencies = &[_]Pkg{ nm, gl, window, leko, session, util },
     };
     step.addPackage(c);
     step.addPackage(nm);
+    step.addPackage(util);
     step.addPackage(gl);
     step.addPackage(window);
     step.addPackage(leko);
-    step.addPackage(render);
     step.addPackage(input);
     step.addPackage(session);
+    step.addPackage(render);
 }

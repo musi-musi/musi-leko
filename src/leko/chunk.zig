@@ -15,6 +15,16 @@ pub const Chunk = struct {
     position: Vec3i,
     id_array: IdArray,
     neighbors: Neighbors,
+    state: State,
+
+    pub const State = enum {
+        /// chunk is in the pool, data is undefined
+        inactive,
+        /// chunk is in the volume, data is being generated or loaded
+        loading,
+        /// chunk is in the volume and ready for gameplay and rendering
+        active,
+    };
 
     pub const IdArray = LekoArray(LekoId);
     pub const Neighbors = [6]?*Self;
@@ -27,10 +37,11 @@ pub const Chunk = struct {
     pub fn init(self: *Self, position: Vec3i) void {
         self.position = position;
         self.neighbors = std.mem.zeroes(Neighbors);
+        self.state = .loading;
     }
 
     pub fn deinit(self: *Self) void {
-        _ = self;
+        self.state = .inactive;
     }
 
     pub fn neighbor(self: Self, comptime direction: Cardinal3) ?*Self {
