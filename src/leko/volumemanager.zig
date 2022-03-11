@@ -45,7 +45,8 @@ pub const VolumeManager = struct {
             self.load_center = new_center;
             const load_min = new_center.sub(Vec3i.fill(@intCast(i32, self.load_radius)));
             const load_max = new_center.add(Vec3i.fill(@intCast(i32, self.load_radius)));
-            var unload_list = std.ArrayList(*Chunk).init(self.allocator);
+            var chunk_list = std.ArrayList(*Chunk).init(self.allocator);
+            defer chunk_list.deinit();
             var chunks_iter = self.volume.chunks.valueIterator();
             while (chunks_iter.next()) |chunk| {
                 const pos = chunk.*.position;
@@ -54,14 +55,13 @@ pub const VolumeManager = struct {
                     (pos.v[1] < load_min.v[1] or pos.v[1] >= load_max.v[1]) or
                     (pos.v[2] < load_min.v[2] or pos.v[2] >= load_max.v[2])
                 ) {
-                    // std.log.info("unload chunk {}", .{pos});
-                    try unload_list.append(chunk.*);
+                    try chunk_list.append(chunk.*);
                 }
             }
-            for (unload_list.items) |chunk| {
+            for (chunk_list.items) |chunk| {
                 self.volume.deleteChunk(chunk.position);
             }
-            unload_list.deinit();
+            chunk_list.clearRetainingCapacity();
             var x = load_min.v[0];
             while (x < load_max.v[0]) : (x += 1) {
                 var y = load_min.v[1];
@@ -71,13 +71,13 @@ pub const VolumeManager = struct {
                         const pos = Vec3i.init(.{x, y, z});
                         if (!self.volume.chunks.contains(pos)) {
                             const chunk = try self.volume.createChunk(pos);
-                            // std.log.info("load chunk {}", .{pos});
                             chunk.state = .loading;
-                            try self.load_thread_group.submitChunk(chunk);
+                            try chunk_list.append(chunk);
                         }
                     }
                 }
             }
+            try self.load_thread_group.submitChunks(chunk_list.items);
         }
     }
 
@@ -94,7 +94,7 @@ const ChunkLoadThreadGroup = struct {
 
     fn init(self: *Self, allocator: Allocator) !void {
         self.allocator = allocator;
-        try self.thread_group.init(allocator, processChunk, 1, 1024);
+        try self.thread_group.init(allocator, processChunk, 0.75, 1024);
     }
 
     fn deinit(self: *Self) void {
@@ -109,12 +109,11 @@ const ChunkLoadThreadGroup = struct {
         self.thread_group.join();
     }
 
-    fn submitChunk(self: *Self, chunk: *Chunk) !void {
-        try self.thread_group.submitItem(chunk);
+    fn submitChunks(self: *Self, chunks: []const *Chunk) !void {
+        try self.thread_group.submitItems(chunks);
     }
 
     fn processChunk(thread_group: *ThreadGroup, chunk: *Chunk, _: usize) !void {
-        // std.log.info("thread {} generate chunk {}", .{thread_index, chunk.*.position});
         const self = @fieldParentPtr(Self, "thread_group", thread_group);
         _ = self;
         const perlin = nm.noise.Perlin3{};

@@ -3,8 +3,8 @@ const std = @import("std");
 const AtomicQueue = @import("atomicqueue.zig").AtomicQueue;
 
 const Thread = std.Thread;
-const ResetEvent = Thread.ResetEvent;
 const Allocator = std.mem.Allocator;
+const Semaphore = @import("semaphore.zig").Semaphore;
 
 pub fn ThreadGroup(comptime Item_: type) type {
     return struct {
@@ -13,6 +13,7 @@ pub fn ThreadGroup(comptime Item_: type) type {
         threads: []Thread,
         process_item_fn: ProcessItemFn,
         is_joining: bool = false,
+        semaphore: Semaphore = .{},
 
         pub const Item = Item_;
         pub const Queue = AtomicQueue(Item);
@@ -24,7 +25,7 @@ pub fn ThreadGroup(comptime Item_: type) type {
 
         pub fn init(self: *Self, allocator: Allocator, process_item_fn: ProcessItemFn, thread_count_factor: f32, queue_capacity: usize) !void {
             const cpu_count = try Thread.getCpuCount();
-            const thread_count = @floatToInt(usize, @intToFloat(f32, cpu_count) * thread_count_factor);
+            const thread_count = std.math.max(@floatToInt(usize, @intToFloat(f32, cpu_count) * thread_count_factor), 1);
             self.* = Self {
                 .item_queue = try Queue.init(allocator, queue_capacity),
                 .threads = try allocator.alloc(Thread, thread_count),
@@ -44,22 +45,24 @@ pub fn ThreadGroup(comptime Item_: type) type {
 
         pub fn join(self: *Self) void {
             self.is_joining = true;
+            self.semaphore.postMulti(self.threads.len);
             for (self.threads) |thread| {
                 thread.join();
             }
         }
 
-        pub fn submitItem(self: *Self, item: Item) !void {
+        pub fn submitItems(self: *Self, items: []const Item) !void {
             if (!self.is_joining) {
-                try self.item_queue.enqueue(item);
+                for (items) |item| {
+                    try self.item_queue.enqueue(item);
+                }
+                self.semaphore.postMulti(items.len);
             }
         }
 
         fn threadMain(self: *Self, thread_index: usize) !void {
             while (true) {
-                while (!self.is_joining and self.item_queue.count() == 0) {
-                    std.os.sched_yield() catch { std.atomic.spinLoopHint(); };
-                }
+                self.semaphore.wait();
                 if (self.is_joining) {
                     return;
                 }

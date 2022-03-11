@@ -53,7 +53,7 @@ pub const exports = struct {
                 .loading => nm.vec3(.{0.5, 1, 0.5}),
                 .active => nm.vec3(.{0.5, 0.5, 1}),
             };
-            cube.draw(chunk.*.position.mulScalar(@intCast(i32, leko.Chunk.width)).cast(f32), 4, color);
+            cube.draw(chunk.*.position.mulScalar(@intCast(i32, leko.Chunk.width)).cast(f32), 0.5, color);
         }
         // volume.setViewMatrix(session.viewMatrix());
         // _model.render();
