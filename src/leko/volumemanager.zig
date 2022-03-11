@@ -29,7 +29,7 @@ pub const VolumeManager = struct {
         self.allocator = allocator;
         self.volume = volume;
         self.load_center = Vec3i.fill(std.math.maxInt(i32));    // garuntee the first load center will be different
-        self.load_radius = 2;   // hard code for now
+        self.load_radius = 4;   // hard code for now
         try self.load_thread_group.init(allocator);
         try self.load_thread_group.spawn();
     }
@@ -40,7 +40,7 @@ pub const VolumeManager = struct {
     }
 
     pub fn update(self: *Self, load_center: Vec3) !void {
-        const new_center: Vec3i = load_center.floor().divScalar(@intToFloat(f32, Chunk.width)).cast(i32);
+        const new_center: Vec3i = load_center.floor().add(Vec3.fill(@intToFloat(f32, Chunk.width / 2))).divScalar(@intToFloat(f32, Chunk.width)).cast(i32);
         if (!new_center.eql(self.load_center)) {
             self.load_center = new_center;
             const load_min = new_center.sub(Vec3i.fill(@intCast(i32, self.load_radius)));
@@ -54,7 +54,7 @@ pub const VolumeManager = struct {
                     (pos.v[1] < load_min.v[1] or pos.v[1] >= load_max.v[1]) or
                     (pos.v[2] < load_min.v[2] or pos.v[2] >= load_max.v[2])
                 ) {
-                    std.log.info("unload chunk {}", .{pos});
+                    // std.log.info("unload chunk {}", .{pos});
                     try unload_list.append(chunk.*);
                 }
             }
@@ -71,7 +71,7 @@ pub const VolumeManager = struct {
                         const pos = Vec3i.init(.{x, y, z});
                         if (!self.volume.chunks.contains(pos)) {
                             const chunk = try self.volume.createChunk(pos);
-                            std.log.info("load chunk {}", .{pos});
+                            // std.log.info("load chunk {}", .{pos});
                             chunk.state = .loading;
                             try self.load_thread_group.submitChunk(chunk);
                         }
@@ -94,7 +94,7 @@ const ChunkLoadThreadGroup = struct {
 
     fn init(self: *Self, allocator: Allocator) !void {
         self.allocator = allocator;
-        try self.thread_group.init(allocator, processChunk, 1, 256);
+        try self.thread_group.init(allocator, processChunk, 1, 1024);
     }
 
     fn deinit(self: *Self) void {
@@ -113,8 +113,8 @@ const ChunkLoadThreadGroup = struct {
         try self.thread_group.submitItem(chunk);
     }
 
-    fn processChunk(thread_group: *ThreadGroup, chunk: *Chunk, thread_index: usize) !void {
-        std.log.info("thread {} generate chunk {}", .{thread_index, chunk.*.position});
+    fn processChunk(thread_group: *ThreadGroup, chunk: *Chunk, _: usize) !void {
+        // std.log.info("thread {} generate chunk {}", .{thread_index, chunk.*.position});
         const self = @fieldParentPtr(Self, "thread_group", thread_group);
         _ = self;
         const perlin = nm.noise.Perlin3{};

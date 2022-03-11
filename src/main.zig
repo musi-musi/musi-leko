@@ -35,6 +35,6 @@ pub fn main() !void {
             }
         }
         try session.update();
-        // render.render();
+        render.render();
     }
 }

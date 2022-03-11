@@ -79,9 +79,6 @@ pub const exports = struct {
     pub fn startDraw() void {
         var proj = projectionMatrix();
         _shader.uniforms.set("proj", proj.v);
-        gl.clearColor(.{0, 0, 0, 1});
-        gl.clearDepth(.float, 1);
-        gl.clear(.color_depth);
         _array.bind();
         _shader.use();
     }
