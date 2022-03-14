@@ -38,7 +38,7 @@ pub const VolumeManager = struct {
             .allocator = allocator,
             .volume = volume,
             .load_center = Vec3i.fill(std.math.maxInt(i32)),    // garuntee the first load center will be different
-            .loaded_chunk_queue = try ChunkAtomicQueue.init(allocator, config.loaded_queue_size),
+            .loaded_chunk_queue = try ChunkAtomicQueue.init(allocator),
         };
         try self.load_thread_group.init(allocator, config.load_group_config, processLoadChunk);
         try self.load_thread_group.spawn(.{});
@@ -47,11 +47,18 @@ pub const VolumeManager = struct {
     pub fn deinit(self: *Self) void {
         self.load_thread_group.join();
         self.load_thread_group.deinit(self.allocator);
-        self.loaded_chunk_queue.deinit(self.allocator);
+        self.loaded_chunk_queue.deinit();
     }
 
     pub fn update(self: *Self, load_center: Vec3) !void {
-        const new_center: Vec3i = load_center.floor().add(Vec3.fill(@intToFloat(f32, Chunk.width / 2))).divScalar(@intToFloat(f32, Chunk.width)).cast(i32);
+        const chunk_center = comptime Vec3.fill(@intToFloat(f32, Chunk.width / 2));
+        const chunk_width = @intToFloat(f32, Chunk.width);
+        const new_center: Vec3i = (
+            load_center.floor()
+            .add(chunk_center)
+            .divScalar(chunk_width)
+            .floor().cast(i32)
+        );
         if (!new_center.eql(self.load_center)) {
             self.load_center = new_center;
             const load_min = new_center.sub(Vec3i.fill(@intCast(i32, self.load_radius)));
@@ -103,7 +110,7 @@ pub const VolumeManager = struct {
     fn processLoadChunk(group: *ChunkThreadGroup, chunk: *Chunk, _: usize) !void {
         const self = @fieldParentPtr(Self, "load_thread_group", group);
         const perlin = nm.noise.Perlin3{};
-        const scale: f32 = 0.1;
+        const scale: f32 = 0.025;
         for (chunk.id_array.items) |*id, i| {
             const index = LekoIndex.initI(i);
             const pos = chunk.position.mulScalar(Chunk.width).add(index.vector().cast(i32)).cast(f32);

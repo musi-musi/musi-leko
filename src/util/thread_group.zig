@@ -8,7 +8,6 @@ const Semaphore = @import("semaphore.zig").Semaphore;
 
 pub const ThreadGroupConfig = struct {
     
-    queue_capacity: usize = 1024,
     thread_count: ThreadCount = .{ .cpu_factor = 0.75 },
 
     pub const ThreadCount = union(enum) {
@@ -49,7 +48,7 @@ pub fn ThreadGroup(comptime Item_: type) type {
             }
             thread_count = std.math.max(1, thread_count);
             self.* = Self {
-                .item_queue = try Queue.init(allocator, config.queue_capacity),
+                .item_queue = try Queue.init(allocator),
                 .threads = try allocator.alloc(Thread, thread_count),
                 .process_item_fn = process_item_fn,
             };

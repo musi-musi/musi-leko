@@ -121,6 +121,12 @@ pub const exports = struct {
             active,
         };
 
+        pub const Parts = enum {
+            middle,
+            border,
+            middle_border,
+        };
+
         pub fn init(self: *Self, chunk: *const Chunk) void {
             self.* = .{
                 .chunk = chunk,
@@ -140,10 +146,18 @@ pub const exports = struct {
             self.data.clear();
         }
 
-        pub fn generateData(self: *Self, allocator: Allocator, part: MeshData.Part) !void {
-            switch (part) {
-                .middle => try self.data.generateMiddle(allocator, self.chunk),
-                .border => try self.data.generateBorder(allocator, self.chunk),
+        pub fn generateData(self: *Self, allocator: Allocator, parts: Parts) !void {
+            switch (parts) {
+                .middle => {
+                    try self.data.generateMiddle(allocator, self.chunk);
+                },
+                .border => {
+                    try self.data.generateBorder(allocator, self.chunk);
+                },
+                .middle_border => {
+                    try self.data.generateMiddle(allocator, self.chunk);
+                    try self.data.generateBorder(allocator, self.chunk);
+                },
             }
             self.quad_count = (
                 self.data.base_middle.items.len +

@@ -7,8 +7,8 @@ uniform ivec3 chunk_position;
 
 uniform vec3 light;
 
-uniform float fog_start = 32;
-uniform float fog_end = 64;
+uniform float fog_start = 2 * CHUNK_WIDTH;
+uniform float fog_end = 3 * CHUNK_WIDTH;
 
 
 out float frag_light;

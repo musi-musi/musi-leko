@@ -1,5 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
+
+const Pool = @import("pool.zig").Pool;
 const os = std.os;
 const mem = std.mem;
 
@@ -12,9 +14,141 @@ const cache_line_length = switch (builtin.cpu.arch) {
     else => 64,
 };
 
+pub const AtomicQueue = LinkedListAtomicQueue;
+
+/// naive locking linked list queue
+pub fn LinkedListAtomicQueue(comptime T: type) type {
+    return struct {
+
+        allocator: Allocator,
+        mutex: std.Thread.Mutex = .{},
+        head: ?*Node = null,
+        tail: ?*Node = null,
+        node_pool: NodePool = undefined,
+
+        const NodePool = Pool(Node);
+
+        const Node = struct {
+            next: ?*Node = null,
+            item: T,
+        };
+
+        const Self = @This();
+
+        pub fn init(allocator: Allocator) !Self {
+            var self = Self {
+                .allocator = allocator,
+            };
+            try self.node_pool.init(allocator, 0);
+            return self;
+        }
+
+        pub fn deinit(self: *Self) void {
+            while (self.dequeue()) |_| {}
+            self.node_pool.deinit();
+        }
+
+        pub fn enqueue(self: *Self, item: T) !void {
+            self.mutex.lock();
+            defer self.mutex.unlock();
+            const node = try self.node_pool.checkOutOrAlloc();
+            node.* = .{
+                .item = item,
+            };
+            if (self.tail) |tail| {
+                tail.next = node;
+            }
+            self.tail = node;
+            if (self.head == null) {
+                self.head = node;
+            }
+        }
+
+        pub fn dequeue(self: *Self) ?T {
+            self.mutex.lock();
+            defer self.mutex.unlock();
+            if (self.head) |node| {
+                const item = node.item;
+                self.head = node.next;
+                if (node.next == null) {
+                    self.tail = null;
+                }
+                self.node_pool.checkIn(node);
+                return item;
+            }
+            else {
+                return null;
+            }
+        }
+    };
+}
+
 // multi-producer, multi-consumer atomic queue.
 // original implementation by @lithdew, modificated by sam lovelace
-pub fn AtomicQueue(comptime T: type) type {
+
+// THIS ONE DOESNT WORK
+pub fn DynamicAtomicQueue(comptime T: type) type {
+
+    return struct {
+
+        allocator: Allocator,
+        fixed_queue: FixedQueue,
+        mutex: ?std.Thread.Mutex = null,
+
+        const FixedQueue = FixedAtomicQueue(T);
+
+        const Self = @This();
+
+        const grow_factor: f32 = 1.5;
+
+        pub fn init(allocator: Allocator, _: usize) !Self {
+            const initial_capacity: usize = 64;
+            var self = Self {
+                .allocator = allocator,
+                .fixed_queue = try FixedQueue.init(allocator, initial_capacity),
+            };
+            return self;
+        }
+
+        pub fn deinit(self: *Self, _: Allocator) void {
+            self.fixed_queue.deinit(self.allocator);
+        }
+
+        pub fn enqueue(self: *Self, item: T) !void {
+            if (self.mutex) |*mutex| mutex.lock();
+            defer if (self.mutex) |*mutex| mutex.unlock();
+
+            if (self.fixed_queue.enqueue(item)) {
+
+            }
+            else |_| {
+                const new_capacity = @floatToInt(usize, @intToFloat(f32, self.fixed_queue.capacity) * grow_factor);
+                var new_fixed_queue = try FixedQueue.init(self.allocator, new_capacity);
+                self.mutex = .{};
+                self.mutex.?.lock();
+                defer self.mutex = null;
+                defer self.mutex.?.unlock();
+                while (self.fixed_queue.dequeue()) |existing_item| {
+                    new_fixed_queue.enqueue(existing_item) catch { @panic(" new queue too small for some reason"); };
+                }
+                self.fixed_queue.deinit(self.allocator);
+                self.fixed_queue = new_fixed_queue;
+                self.fixed_queue.enqueue(item) catch { @panic(" new queue too small for some reason"); };
+            }
+        }
+
+        pub fn dequeue(self: *Self) ?T {
+            if (self.mutex) |*mutex| mutex.lock();
+            defer if (self.mutex) |*mutex| mutex.unlock();
+            return self.fixed_queue.dequeue();
+        }
+    };
+
+}
+
+// multi-producer, multi-consumer atomic queue.
+// original implementation by @lithdew, modificated by sam lovelace
+pub fn FixedAtomicQueue(comptime T: type) type {
     return struct {
 
         capacity: usize,

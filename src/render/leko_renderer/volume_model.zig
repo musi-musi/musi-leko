@@ -37,10 +37,8 @@ pub const exports = struct {
     pub fn drawModel(model: *const VolumeModel) void {
         var meshes = model.meshes.valueIterator();
         while (meshes.next()) |mesh| {
-            if (mesh.*.state == .active) {
-                chunk_mesh.bindMesh(mesh.*);
-                chunk_mesh.drawMesh(mesh.*);
-            }
+            chunk_mesh.bindMesh(mesh.*);
+            chunk_mesh.drawMesh(mesh.*);
         }
     }
     
@@ -122,13 +120,8 @@ pub const exports = struct {
 
         const ChunkMeshGenerateJob = struct {
             mesh: *ChunkMesh,
-            parts: Parts,
-
-            const Parts = enum {
-                middle,
-                middle_border,
-                border,
-            };
+            parts: ChunkMesh.Parts,
+            
 
         };
 
@@ -136,9 +129,8 @@ pub const exports = struct {
 
         const load_radius = volume_manager_config.load_radius;
         const generate_group_config = util.ThreadGroupConfig {
-            .queue_capacity = load_radius * load_radius * load_radius * 64 + 32,
             .thread_count = .{
-                .cpu_factor = 0.5, 
+                .cpu_factor = 0.75, 
             },
         };
 
@@ -146,7 +138,7 @@ pub const exports = struct {
             self.* = .{
                 .allocator = allocator,
                 .model = model,
-                .mesh_upload_queue = try ChunkMeshAtomicQueue.init(allocator, 4096),
+                .mesh_upload_queue = try ChunkMeshAtomicQueue.init(allocator),
                 .callback_chunk_loaded = .{
                     .callback_fn = callbackChunkLoaded,
                 },
@@ -161,12 +153,14 @@ pub const exports = struct {
         pub fn deinit(self: *Self) void {
             self.generate_thread_group.join();
             self.generate_thread_group.deinit(self.allocator);
-            self.mesh_upload_queue.deinit(self.allocator);
+            self.mesh_upload_queue.deinit();
         }
 
         pub fn uploadGeneratedMeshes(self: *Self) void {
             while (self.mesh_upload_queue.dequeue()) |mesh| {
-                mesh.uploadData();
+                if (mesh.state == .active) {
+                    mesh.uploadData();
+                }
             }
         }
 
@@ -178,7 +172,6 @@ pub const exports = struct {
         fn callbackChunkLoaded(callback: *leko.ChunkCallback, chunk: *Chunk) !void {
             const self = @fieldParentPtr(Self, "callback_chunk_loaded", callback);
             const mesh = try self.model.activateChunkMesh(chunk);
-            mesh.*.state = .generating;
             try self.generate_thread_group.submitItem(.{
                 .mesh = mesh,
                 .parts = .middle_border,
@@ -195,6 +188,7 @@ pub const exports = struct {
                         if (comptime !offset.eql(Vec3i.zero)) {
                             const neighbor_position = position.add(offset);
                             if (model.meshes.get(neighbor_position)) |neighbor_mesh| {
+                                neighbor_mesh.state = .generating;
                                 try self.generate_thread_group.submitItem(.{
                                     .mesh = neighbor_mesh,
                                     .parts = .border,
@@ -208,26 +202,12 @@ pub const exports = struct {
 
         fn processGenerateMesh(group: *ChunkMeshGenerateThreadGroup, job: ChunkMeshGenerateJob, _: usize) !void {
             const self = @fieldParentPtr(Self, "generate_thread_group", group);
-            if (job.mesh.*.state != .inactive) {
-                job.mesh.*.mutex.lock();
-                defer job.mesh.*.mutex.unlock();
-                _ = self;
-                switch (job.parts) {
-                    .middle => {
-                        try job.mesh.generateData(self.allocator, .middle);
-                    },
-                    .middle_border => {
-                        try job.mesh.generateData(self.allocator, .middle);
-                        try job.mesh.generateData(self.allocator, .border);
-                    },
-                    .border => {
-                        try job.mesh.generateData(self.allocator, .border);
-                    },
-                }
-                job.mesh.*.state = .active;
-                _ = self;
-                try self.*.mesh_upload_queue.enqueue(job.mesh);
-            }
+            job.mesh.*.mutex.lock();
+            defer job.mesh.*.mutex.unlock();
+            job.mesh.*.state = .generating;
+            try job.mesh.generateData(self.allocator, job.parts);
+            job.mesh.*.state = .active;
+            try self.*.mesh_upload_queue.enqueue(job.mesh);
         }
 
     };
