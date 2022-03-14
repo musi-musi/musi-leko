@@ -41,12 +41,12 @@ pub const Volume = struct {
         self.chunk_pool.deinit();
     }
 
-    pub fn initChunk(self: *Self, chunk_pos: Vec3i) !*Chunk {
+    pub fn activateChunk(self: *Self, chunk_pos: Vec3i) !*Chunk {
         if (self.chunks.get(chunk_pos)) |existing| {
             return existing;
         }
         else {
-            const chunk = try self.chunk_pool.checkOut();
+            const chunk = try self.chunk_pool.checkOutOrAlloc();
             chunk.init(chunk_pos);
             try self.chunks.put(chunk_pos, chunk);
             inline for (comptime std.enums.values(Cardinal3)) |direction| {
@@ -60,7 +60,7 @@ pub const Volume = struct {
         }
     }
 
-    pub fn deinitChunk(self: *Self, chunk_pos: Vec3i) void {
+    pub fn deactivateChunk(self: *Self, chunk_pos: Vec3i) void {
         if (self.chunks.get(chunk_pos)) |chunk| {
             inline for (comptime std.enums.values(Cardinal3)) |direction| {
                 if (chunk.neighbor(direction)) |neighbor| {

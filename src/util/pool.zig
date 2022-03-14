@@ -39,7 +39,15 @@ pub fn Pool(comptime Item_: type) type {
             self.inactive_head = null;
         }
 
-        pub fn checkOut(self: *Self) !*Item {
+        pub fn isEmpty(self: Self) bool {
+            return self.inactive_head == null;
+        }
+
+        pub fn checkOutOrAlloc(self: *Self) !*Item {
+            return self.checkOut() orelse try self.alloc();
+        }
+
+        pub fn checkOut(self: *Self) ?*Item {
             if (self.inactive_head) |node| {
                 self.inactive_head = node.next;
                 node.next = null;
@@ -47,11 +55,15 @@ pub fn Pool(comptime Item_: type) type {
                 return &node.item;
             }
             else {
-                const node = try self.allocator.create(Node);
-                node.* = .{};
-                node.is_checked_out = true;
-                return &node.item;
+                return null;
             }
+        }
+
+        pub fn alloc(self: *Self) !*Item {
+            const node = try self.allocator.create(Node);
+            node.* = .{};
+            node.is_checked_out = true;
+            return &node.item;
         }
 
         pub fn checkIn(self: *Self, item: *Item) void {

@@ -6,6 +6,20 @@ const Thread = std.Thread;
 const Allocator = std.mem.Allocator;
 const Semaphore = @import("semaphore.zig").Semaphore;
 
+pub const ThreadGroupConfig = struct {
+    
+    queue_capacity: usize = 1024,
+    thread_count: ThreadCount = .{ .cpu_factor = 0.75 },
+
+    pub const ThreadCount = union(enum) {
+        /// determine thread count as a fraction of cpu cores
+        cpu_factor: f32,
+        /// use a specific number of threads
+        count: usize,
+    };
+
+};
+
 pub fn ThreadGroup(comptime Item_: type) type {
     return struct {
 
@@ -20,14 +34,22 @@ pub fn ThreadGroup(comptime Item_: type) type {
         
         pub const ProcessItemFn = fn(*Self, Item, usize) anyerror!void;
 
-
         const Self = @This();
 
-        pub fn init(self: *Self, allocator: Allocator, process_item_fn: ProcessItemFn, thread_count_factor: f32, queue_capacity: usize) !void {
-            const cpu_count = try Thread.getCpuCount();
-            const thread_count = std.math.max(@floatToInt(usize, @intToFloat(f32, cpu_count) * thread_count_factor), 1);
+        pub fn init(self: *Self, allocator: Allocator, config: ThreadGroupConfig, process_item_fn: ProcessItemFn) !void {
+            var thread_count: usize = 0;
+            switch (config.thread_count) {
+                .cpu_factor => |factor| {
+                    const cpu_count = try Thread.getCpuCount();
+                    thread_count = @floatToInt(usize, @intToFloat(f32, cpu_count) * factor);
+                },
+                .count => |count| {
+                    thread_count = count;
+                },
+            }
+            thread_count = std.math.max(1, thread_count);
             self.* = Self {
-                .item_queue = try Queue.init(allocator, queue_capacity),
+                .item_queue = try Queue.init(allocator, config.queue_capacity),
                 .threads = try allocator.alloc(Thread, thread_count),
                 .process_item_fn = process_item_fn,
             };
@@ -49,6 +71,11 @@ pub fn ThreadGroup(comptime Item_: type) type {
             for (self.threads) |thread| {
                 thread.join();
             }
+        }
+
+        pub fn submitItem(self: *Self, item: Item) !void {
+            const items = [1]Item{ item};
+            try self.submitItems(&items);
         }
 
         pub fn submitItems(self: *Self, items: []const Item) !void {

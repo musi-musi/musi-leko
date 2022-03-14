@@ -47,8 +47,8 @@ const Shader = shader.Shader(&.{
         
         gl.uniform("light", .vec3),
     },
-    @embedFile("chunkmesh.vert"),
-    @embedFile("chunkmesh.frag"),
+    @embedFile("chunk_mesh.vert"),
+    @embedFile("chunk_mesh.frag"),
     &.{MeshData.createShaderHeader()},
 );
 
@@ -83,13 +83,16 @@ pub const exports = struct {
         _shader.use();
     }
 
-    pub fn bindMesh(mesh: *const Mesh) void {
+    pub fn bindMesh(mesh: *const ChunkMesh) void {
         _array.buffer_binds.base.bindBuffer(mesh.base_buffer);
         _shader.uniforms.set("chunk_position", mesh.chunk.position.v);
     }
 
-    pub fn drawMesh(mesh: *const Mesh) void {
-        gl.drawElementsInstanced(.triangles, 6, .uint, mesh.quad_count);
+    pub fn drawMesh(mesh: *const ChunkMesh) void {
+        _ = mesh;
+        if (mesh.quad_count > 0 and mesh.has_uploaded) {
+            gl.drawElementsInstanced(.triangles, 6, .uint, mesh.quad_count);
+        }
     }
 
     fn projectionMatrix() nm.Mat4 {
@@ -100,19 +103,30 @@ pub const exports = struct {
         return nm.transform.createPerspective(fov_rad, aspect, 0.001, 10000);
     }
 
-    pub const Mesh = struct {
+    pub const ChunkMesh = struct {
 
         chunk: *const Chunk,
         base_buffer: QuadBaseBuffer,
         data: MeshData,
         quad_count: usize = 0,
+        state: State = .inactive,
+        mutex: std.Thread.Mutex = .{},
+        has_uploaded: bool = false,
 
         const Self = @This();
 
+        pub const State = enum {
+            inactive,
+            generating,
+            active,
+        };
+
         pub fn init(self: *Self, chunk: *const Chunk) void {
-            self.chunk = chunk;
-            self.base_buffer = QuadBaseBuffer.init();
-            self.data = MeshData.init();
+            self.* = .{
+                .chunk = chunk,
+                .base_buffer = QuadBaseBuffer.init(),
+                .data = MeshData.init(),
+            };
         }
 
         pub fn deinit(self: *Self, allocator: Allocator) void  {
@@ -120,16 +134,24 @@ pub const exports = struct {
             defer self.data.deinit(allocator);
         }
 
-        pub fn generateData(self: *Self, allocator: Allocator) !void {
-            try self.data.generateMiddle(allocator, self.chunk);
-            try self.data.generateBorder(allocator, self.chunk);
+        pub fn clear(self: *Self) void {
+            self.quad_count = 0;
+            self.has_uploaded = false;
+            self.data.clear();
+        }
+
+        pub fn generateData(self: *Self, allocator: Allocator, part: MeshData.Part) !void {
+            switch (part) {
+                .middle => try self.data.generateMiddle(allocator, self.chunk),
+                .border => try self.data.generateBorder(allocator, self.chunk),
+            }
             self.quad_count = (
                 self.data.base_middle.items.len +
                 self.data.base_border.items.len
             );
         }
 
-        pub fn uploadData(self: Self) void {
+        pub fn uploadData(self: *Self) void {
             if (self.quad_count > 0) {
                 self.base_buffer.alloc(self.quad_count, .static_draw);
                 if (self.data.base_middle.items.len > 0) {
@@ -138,6 +160,7 @@ pub const exports = struct {
                 if (self.data.base_border.items.len > 0) {
                     self.base_buffer.subData(self.data.base_border.items, self.data.base_middle.items.len);
                 }
+                self.has_uploaded = true;
             }
         }
 
@@ -167,6 +190,11 @@ pub const MeshData = struct {
     pub fn deinit(self: *Self, allocator: Allocator) void {
         self.base_middle.deinit(allocator);
         self.base_border.deinit(allocator);
+    }
+
+    pub fn clear(self: *Self) void {
+        self.base_middle.shrinkRetainingCapacity(0);
+        self.base_border.shrinkRetainingCapacity(0);
     }
 
     pub fn generateMiddle(self: *Self, allocator: Allocator, chunk: *const leko.Chunk) !void {

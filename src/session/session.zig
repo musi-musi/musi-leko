@@ -60,4 +60,8 @@ pub const exports = struct {
         return &_volume;
     }
 
+    pub fn volumeManager() *leko.VolumeManager {
+        return &_volume_manager;
+    }
+
 };

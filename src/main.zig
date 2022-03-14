@@ -5,6 +5,7 @@ const window = @import("window");
 const session = @import("session");
 const render = @import("render");
 
+const session_renderer = render.session_renderer;
 
 pub fn main() !void {
 
@@ -17,9 +18,12 @@ pub fn main() !void {
     try session.init(allocator);
     defer session.deinit();
 
+    try session_renderer.init(allocator);
+    defer session_renderer.deinit();
+
+    // try render.init(allocator);
+    // defer render.deinit();
     
-    try render.init(allocator);
-    defer render.deinit();
 
     window.setMouseMode(.hidden_raw);
     while (window.update()) {
@@ -35,6 +39,9 @@ pub fn main() !void {
             }
         }
         try session.update();
-        render.render();
+    
+        session_renderer.render();
+
+        // render.render();
     }
 }
