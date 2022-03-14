@@ -97,7 +97,7 @@ fn projectionMatrix() nm.Mat4 {
     const height = window.height();
     const fov_rad: f32 = std.math.pi / 180.0 * 90.0;
     const aspect = @intToFloat(f32, width) / @intToFloat(f32, height);
-    return nm.transform.createPerspective(fov_rad, aspect, 0.001, 10000);
+    return nm.transform.createPerspective(fov_rad, aspect, 0.01, 1000);
 }
 
 pub const ChunkMesh = struct {
@@ -156,13 +156,13 @@ pub const ChunkMesh = struct {
                 try self.data.generateBorder(allocator, self.chunk);
             },
         }
+    }
+
+    pub fn uploadData(self: *Self) void {
         self.quad_count = (
             self.data.base_middle.items.len +
             self.data.base_border.items.len
         );
-    }
-
-    pub fn uploadData(self: *Self) void {
         if (self.quad_count > 0) {
             self.base_buffer.alloc(self.quad_count, .static_draw);
             if (self.data.base_middle.items.len > 0) {
