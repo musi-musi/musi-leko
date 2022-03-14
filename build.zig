@@ -44,7 +44,7 @@ pub fn build(b: *std.build.Builder) void {
         },
         else => @panic("unsupported os target"),
     }
-    // exe.linkSystemLibrary("deps/lib/cimguid");
+    exe.linkSystemLibrary("deps/lib/cimguid");
     exe.linkLibC();
     exe.install();
 
@@ -76,6 +76,11 @@ fn addPkgs(step: *std.build.LibExeObjStep) void {
     const util = Pkg {
         .name = "util",
         .path = FileSource.relative("src/util/_.zig"),
+    };
+    const ijo = Pkg {
+        .name = "ijo",
+        .path = FileSource.relative("src/ijo/_.zig"),
+        .dependencies = &[_]Pkg{ util },
     };
     const gl = Pkg {
         .name = "gl",
@@ -110,6 +115,7 @@ fn addPkgs(step: *std.build.LibExeObjStep) void {
     step.addPackage(c);
     step.addPackage(nm);
     step.addPackage(util);
+    step.addPackage(ijo);
     step.addPackage(gl);
     step.addPackage(window);
     step.addPackage(leko);
