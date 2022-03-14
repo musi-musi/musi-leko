@@ -32,18 +32,18 @@ pub fn build(b: *std.build.Builder) void {
     // exe.addIncludeDir("GLFW/include/GLFW");
     exe.addLibPath("deps/lib");
     exe.linkSystemLibrary("glfw3");
-    switch (target.getOs().tag) {
-        .windows => {
-            exe.linkSystemLibrary("user32");
-            exe.linkSystemLibrary("gdi32");
-            exe.linkSystemLibrary("shell32");
-            exe.linkSystemLibrary("opengl32");
-        },
-        .linux => {
+    // switch (target.getOs().tag) {
+    //     .windows => {
+    //         exe.linkSystemLibrary("user32");
+    //         exe.linkSystemLibrary("gdi32");
+    //         exe.linkSystemLibrary("shell32");
+    //         exe.linkSystemLibrary("opengl32");
+    //     },
+    //     .linux => {
 
-        },
-        else => @panic("unsupported os target"),
-    }
+    //     },
+    //     else => @panic("unsupported os target"),
+    // }
     // exe.linkSystemLibrary("deps/lib/cimguid");
     exe.linkLibC();
     exe.install();
