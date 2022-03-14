@@ -20,48 +20,44 @@ var _view_matrix: Mat4 = undefined;
 
 const Allocator = std.mem.Allocator;
 
-pub const exports = struct {
+pub fn init(allocator: Allocator) !void {
 
-    pub fn init(allocator: Allocator) !void {
+    try _volume.init(allocator, 32);
+    try _volume_manager.init(allocator, &_volume);
 
-        try _volume.init(allocator, 32);
-        try _volume_manager.init(allocator, &_volume);
+    _camera_pos = Vec3.init(.{0, 0, 0});
+    window.setMouseMode(.hidden_raw);
+}
 
-        _camera_pos = Vec3.init(.{0, 0, 0});
-        window.setMouseMode(.hidden_raw);
-    }
+pub fn deinit() void {
+    _volume_manager.deinit();
+    _volume.deinit();
+}
 
-    pub fn deinit() void {
-        _volume_manager.deinit();
-        _volume.deinit();
-    }
+pub fn update() !void {
+    const delta = @floatCast(f32, window.frameTime());
+    _mouselook.update();
+    _view_matrix = _mouselook.viewMatrix();
+    const forward = _view_matrix.transformDirection(nm.Vec3.unit(.z)).mulScalar(delta * speed);
+    const right = _view_matrix.transformDirection(nm.Vec3.unit(.x)).mulScalar(delta * speed);
+    const up = nm.Vec3.unit(.y).mulScalar(delta * speed);
+    if (window.keyIsDown(.w)) _camera_pos = _camera_pos.add(forward);
+    if (window.keyIsDown(.s)) _camera_pos = _camera_pos.sub(forward);
+    if (window.keyIsDown(.a)) _camera_pos = _camera_pos.sub(right);
+    if (window.keyIsDown(.d)) _camera_pos = _camera_pos.add(right);
+    if (window.keyIsDown(.space)) _camera_pos = _camera_pos.add(up);
+    if (window.keyIsDown(.left_shift)) _camera_pos = _camera_pos.sub(up);
+    try _volume_manager.update(_camera_pos);
+}
 
-    pub fn update() !void {
-        const delta = @floatCast(f32, window.frameTime());
-        _mouselook.update();
-        _view_matrix = _mouselook.viewMatrix();
-        const forward = _view_matrix.transformDirection(nm.Vec3.unit(.z)).mulScalar(delta * speed);
-        const right = _view_matrix.transformDirection(nm.Vec3.unit(.x)).mulScalar(delta * speed);
-        const up = nm.Vec3.unit(.y).mulScalar(delta * speed);
-        if (window.keyIsDown(.w)) _camera_pos = _camera_pos.add(forward);
-        if (window.keyIsDown(.s)) _camera_pos = _camera_pos.sub(forward);
-        if (window.keyIsDown(.a)) _camera_pos = _camera_pos.sub(right);
-        if (window.keyIsDown(.d)) _camera_pos = _camera_pos.add(right);
-        if (window.keyIsDown(.space)) _camera_pos = _camera_pos.add(up);
-        if (window.keyIsDown(.left_shift)) _camera_pos = _camera_pos.sub(up);
-        try _volume_manager.update(_camera_pos);
-    }
+pub fn viewMatrix() Mat4 {
+    return nm.transform.createTranslate(_camera_pos.neg()).mul(_view_matrix);
+}
 
-    pub fn viewMatrix() Mat4 {
-        return nm.transform.createTranslate(_camera_pos.neg()).mul(_view_matrix);
-    }
+pub fn volume() *const leko.Volume {
+    return &_volume;
+}
 
-    pub fn volume() *const leko.Volume {
-        return &_volume;
-    }
-
-    pub fn volumeManager() *leko.VolumeManager {
-        return &_volume_manager;
-    }
-
-};
+pub fn volumeManager() *leko.VolumeManager {
+    return &_volume_manager;
+}

@@ -1,2 +1,2 @@
 const session = @import("session.zig");
-pub usingnamespace session.exports;
+pub usingnamespace session;

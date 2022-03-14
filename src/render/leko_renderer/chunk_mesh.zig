@@ -52,133 +52,128 @@ const Shader = shader.Shader(&.{
     &.{MeshData.createShaderHeader()},
 );
 
-pub usingnamespace exports;
-pub const exports = struct {
+pub fn init() !void {
+    _array = Array.init();
+    _index_buffer = Array.IndexBuffer.init();
+    _index_buffer.data(&.{0, 1, 3, 0, 3, 2}, .static_draw);
+    _array.bindIndexBuffer(_index_buffer);
+    _shader = try Shader.init();
 
-    pub fn init() !void {
-        _array = Array.init();
-        _index_buffer = Array.IndexBuffer.init();
-        _index_buffer.data(&.{0, 1, 3, 0, 3, 2}, .static_draw);
-        _array.bindIndexBuffer(_index_buffer);
-        _shader = try Shader.init();
+    const light = Vec3.init(.{1, 3, 2}).norm();
+    _shader.uniforms.set("light", light.v);
+}
 
-        const light = Vec3.init(.{1, 3, 2}).norm();
-        _shader.uniforms.set("light", light.v);
+pub fn deinit() void {
+    _array.deinit();
+    _index_buffer.deinit();
+    _shader.deinit();
+}
+
+pub fn setViewMatrix(view: nm.Mat4) void {
+    _shader.uniforms.set("view", view.v);
+}
+
+pub fn startDraw() void {
+    var proj = projectionMatrix();
+    _shader.uniforms.set("proj", proj.v);
+    _array.bind();
+    _shader.use();
+}
+
+pub fn bindMesh(mesh: *const ChunkMesh) void {
+    _array.buffer_binds.base.bindBuffer(mesh.base_buffer);
+    _shader.uniforms.set("chunk_position", mesh.chunk.position.v);
+}
+
+pub fn drawMesh(mesh: *const ChunkMesh) void {
+    _ = mesh;
+    if (mesh.quad_count > 0 and mesh.has_uploaded) {
+        gl.drawElementsInstanced(.triangles, 6, .uint, mesh.quad_count);
     }
+}
 
-    pub fn deinit() void {
-        _array.deinit();
-        _index_buffer.deinit();
-        _shader.deinit();
-    }
+fn projectionMatrix() nm.Mat4 {
+    const width = window.width();
+    const height = window.height();
+    const fov_rad: f32 = std.math.pi / 180.0 * 90.0;
+    const aspect = @intToFloat(f32, width) / @intToFloat(f32, height);
+    return nm.transform.createPerspective(fov_rad, aspect, 0.001, 10000);
+}
 
-    pub fn setViewMatrix(view: nm.Mat4) void {
-        _shader.uniforms.set("view", view.v);
-    }
+pub const ChunkMesh = struct {
 
-    pub fn startDraw() void {
-        var proj = projectionMatrix();
-        _shader.uniforms.set("proj", proj.v);
-        _array.bind();
-        _shader.use();
-    }
+    chunk: *const Chunk,
+    base_buffer: QuadBaseBuffer,
+    data: MeshData,
+    quad_count: usize = 0,
+    state: State = .inactive,
+    mutex: std.Thread.Mutex = .{},
+    has_uploaded: bool = false,
 
-    pub fn bindMesh(mesh: *const ChunkMesh) void {
-        _array.buffer_binds.base.bindBuffer(mesh.base_buffer);
-        _shader.uniforms.set("chunk_position", mesh.chunk.position.v);
-    }
+    const Self = @This();
 
-    pub fn drawMesh(mesh: *const ChunkMesh) void {
-        _ = mesh;
-        if (mesh.quad_count > 0 and mesh.has_uploaded) {
-            gl.drawElementsInstanced(.triangles, 6, .uint, mesh.quad_count);
-        }
-    }
-
-    fn projectionMatrix() nm.Mat4 {
-        const width = window.width();
-        const height = window.height();
-        const fov_rad: f32 = std.math.pi / 180.0 * 90.0;
-        const aspect = @intToFloat(f32, width) / @intToFloat(f32, height);
-        return nm.transform.createPerspective(fov_rad, aspect, 0.001, 10000);
-    }
-
-    pub const ChunkMesh = struct {
-
-        chunk: *const Chunk,
-        base_buffer: QuadBaseBuffer,
-        data: MeshData,
-        quad_count: usize = 0,
-        state: State = .inactive,
-        mutex: std.Thread.Mutex = .{},
-        has_uploaded: bool = false,
-
-        const Self = @This();
-
-        pub const State = enum {
-            inactive,
-            generating,
-            active,
-        };
-
-        pub const Parts = enum {
-            middle,
-            border,
-            middle_border,
-        };
-
-        pub fn init(self: *Self, chunk: *const Chunk) void {
-            self.* = .{
-                .chunk = chunk,
-                .base_buffer = QuadBaseBuffer.init(),
-                .data = MeshData.init(),
-            };
-        }
-
-        pub fn deinit(self: *Self, allocator: Allocator) void  {
-            defer self.base_buffer.deinit();
-            defer self.data.deinit(allocator);
-        }
-
-        pub fn clear(self: *Self) void {
-            self.quad_count = 0;
-            self.has_uploaded = false;
-            self.data.clear();
-        }
-
-        pub fn generateData(self: *Self, allocator: Allocator, parts: Parts) !void {
-            switch (parts) {
-                .middle => {
-                    try self.data.generateMiddle(allocator, self.chunk);
-                },
-                .border => {
-                    try self.data.generateBorder(allocator, self.chunk);
-                },
-                .middle_border => {
-                    try self.data.generateMiddle(allocator, self.chunk);
-                    try self.data.generateBorder(allocator, self.chunk);
-                },
-            }
-            self.quad_count = (
-                self.data.base_middle.items.len +
-                self.data.base_border.items.len
-            );
-        }
-
-        pub fn uploadData(self: *Self) void {
-            if (self.quad_count > 0) {
-                self.base_buffer.alloc(self.quad_count, .static_draw);
-                if (self.data.base_middle.items.len > 0) {
-                    self.base_buffer.subData(self.data.base_middle.items, 0);
-                }
-                if (self.data.base_border.items.len > 0) {
-                    self.base_buffer.subData(self.data.base_border.items, self.data.base_middle.items.len);
-                }
-                self.has_uploaded = true;
-            }
-        }
-
+    pub const State = enum {
+        inactive,
+        generating,
+        active,
     };
+
+    pub const Parts = enum {
+        middle,
+        border,
+        middle_border,
+    };
+
+    pub fn init(self: *Self, chunk: *const Chunk) void {
+        self.* = .{
+            .chunk = chunk,
+            .base_buffer = QuadBaseBuffer.init(),
+            .data = MeshData.init(),
+        };
+    }
+
+    pub fn deinit(self: *Self, allocator: Allocator) void  {
+        defer self.base_buffer.deinit();
+        defer self.data.deinit(allocator);
+    }
+
+    pub fn clear(self: *Self) void {
+        self.quad_count = 0;
+        self.has_uploaded = false;
+        self.data.clear();
+    }
+
+    pub fn generateData(self: *Self, allocator: Allocator, parts: Parts) !void {
+        switch (parts) {
+            .middle => {
+                try self.data.generateMiddle(allocator, self.chunk);
+            },
+            .border => {
+                try self.data.generateBorder(allocator, self.chunk);
+            },
+            .middle_border => {
+                try self.data.generateMiddle(allocator, self.chunk);
+                try self.data.generateBorder(allocator, self.chunk);
+            },
+        }
+        self.quad_count = (
+            self.data.base_middle.items.len +
+            self.data.base_border.items.len
+        );
+    }
+
+    pub fn uploadData(self: *Self) void {
+        if (self.quad_count > 0) {
+            self.base_buffer.alloc(self.quad_count, .static_draw);
+            if (self.data.base_middle.items.len > 0) {
+                self.base_buffer.subData(self.data.base_middle.items, 0);
+            }
+            if (self.data.base_border.items.len > 0) {
+                self.base_buffer.subData(self.data.base_border.items, self.data.base_middle.items.len);
+            }
+            self.has_uploaded = true;
+        }
+    }
 
 };
 
