@@ -109,8 +109,8 @@ pub const VolumeModelManager = struct {
     
     mesh_upload_queue: ChunkMeshAtomicQueue = undefined,
 
-    callback_chunk_loaded: leko.ChunkCallback,
-    callback_chunk_unloaded: leko.ChunkCallback,
+    listener_chunk_loaded: leko.ChunkEvent.Listener,
+    listener_chunk_unloaded: leko.ChunkEvent.Listener,
 
     const ChunkMeshAtomicQueue = util.AtomicQueue(*ChunkMesh);
     const ChunkMeshGenerateThreadGroup = util.ThreadGroup(ChunkMeshGenerateJob);
@@ -136,12 +136,8 @@ pub const VolumeModelManager = struct {
             .allocator = allocator,
             .model = model,
             .mesh_upload_queue = try ChunkMeshAtomicQueue.init(allocator),
-            .callback_chunk_loaded = .{
-                .callback_fn = callbackChunkLoaded,
-            },
-            .callback_chunk_unloaded = .{
-                .callback_fn = callbackChunkUnloaded,
-            },
+            .listener_chunk_loaded = leko.ChunkEvent.Listener.init(callbackChunkLoaded),
+            .listener_chunk_unloaded = leko.ChunkEvent.Listener.init(callbackChunkUnloaded),
         };
         try self.generate_thread_group.init(allocator, generate_group_config, processGenerateMesh);
         try self.generate_thread_group.spawn(.{});
@@ -161,13 +157,13 @@ pub const VolumeModelManager = struct {
         }
     }
 
-    fn callbackChunkUnloaded(callback: *leko.ChunkCallback, chunk: *Chunk) !void {
-        const self = @fieldParentPtr(Self, "callback_chunk_unloaded", callback);
+    fn callbackChunkUnloaded(callback: *leko.ChunkEvent.Listener, chunk: *Chunk) !void {
+        const self = @fieldParentPtr(Self, "listener_chunk_unloaded", callback);
         self.model.deactivateChunkMesh(chunk.position);
     }
 
-    fn callbackChunkLoaded(callback: *leko.ChunkCallback, chunk: *Chunk) !void {
-        const self = @fieldParentPtr(Self, "callback_chunk_loaded", callback);
+    fn callbackChunkLoaded(callback: *leko.ChunkEvent.Listener, chunk: *Chunk) !void {
+        const self = @fieldParentPtr(Self, "listener_chunk_loaded", callback);
         const mesh = try self.model.activateChunkMesh(chunk);
         try self.generate_thread_group.submitItem(.{
             .mesh = mesh,

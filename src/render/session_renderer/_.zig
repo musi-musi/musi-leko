@@ -21,8 +21,8 @@ pub fn init(allocator: Allocator) !void {
     const volume_manager = session.volumeManager();
     try _model.init(allocator, volume);
     try _model_manager.init(allocator, &_model);
-    volume_manager.callback_chunk_loaded = &_model_manager.callback_chunk_loaded;
-    volume_manager.callback_chunk_unloaded = &_model_manager.callback_chunk_unloaded;
+    volume_manager.event_chunk_loaded.addListener(&_model_manager.listener_chunk_loaded);
+    volume_manager.event_chunk_unloaded.addListener(&_model_manager.listener_chunk_unloaded);
 }
 
 pub fn deinit() void {

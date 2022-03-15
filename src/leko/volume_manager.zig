@@ -6,7 +6,6 @@ const Volume = @import("volume.zig").Volume;
 const Chunk = @import("chunk.zig").Chunk;
 const LekoIndex = @import("chunk.zig").LekoIndex;
 
-const callback = @import("callback.zig");
 const config = @import("config.zig").volume_manager;
 
 const Vec3 = nm.Vec3;
@@ -14,6 +13,7 @@ const Vec3i = nm.Vec3i;
 
 const Allocator = std.mem.Allocator;
 
+pub const ChunkEvent = util.Event(*Chunk);
 
 pub const VolumeManager = struct {
 
@@ -30,8 +30,8 @@ pub const VolumeManager = struct {
     load_thread_group: ChunkThreadGroup = undefined,
 
     loaded_chunk_queue: ChunkAtomicQueue,
-    callback_chunk_loaded: ?*callback.ChunkCallback = null,
-    callback_chunk_unloaded: ?*callback.ChunkCallback = null,
+    event_chunk_loaded: ChunkEvent = .{},
+    event_chunk_unloaded: ChunkEvent = .{},
 
     load_queue: ChunkLoadQueue = undefined,
     load_thread: ChunkLoadThread = undefined,
@@ -96,9 +96,7 @@ pub const VolumeManager = struct {
                 },
                 .unloading => {
                     if (self.volume.chunks.get(load.chunk_position)) |chunk| {
-                        if (self.callback_chunk_unloaded) |callback_chunk_unloaded| {
-                            try callback_chunk_unloaded.call(chunk);
-                        }
+                        try self.event_chunk_unloaded.dispatch(chunk);
                         self.volume.deactivateChunk(chunk.position);
                     }
                 },
@@ -106,9 +104,7 @@ pub const VolumeManager = struct {
         }
         // self.chunks_mutex.unlock();
         while (self.loaded_chunk_queue.dequeue()) |chunk| {
-            if (self.callback_chunk_loaded) |callback_chunk_loaded| {
-                try callback_chunk_loaded.call(chunk);
-            }
+            try self.event_chunk_loaded.dispatch(chunk);
         }
     }
 
