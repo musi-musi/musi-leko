@@ -19,6 +19,8 @@ pub const VolumeManager = struct {
 
     allocator: Allocator,
     volume: *Volume,
+    chunks_mutex: std.Thread.Mutex = .{},
+    chunk_positions: std.ArrayListUnmanaged(Vec3i) = .{},
 
     /// center of the loading zone in chunks
     load_center: Vec3i,
@@ -31,6 +33,21 @@ pub const VolumeManager = struct {
     callback_chunk_loaded: ?*callback.ChunkCallback = null,
     callback_chunk_unloaded: ?*callback.ChunkCallback = null,
 
+    load_queue: ChunkLoadQueue = undefined,
+    load_thread: ChunkLoadThread = undefined,
+
+
+    const ChunkLoad = struct {
+        chunk_position: Vec3i,
+        state: State,
+        const State = enum {
+            loading, unloading,
+        };
+    };
+
+    const ChunkLoadQueue = util.AtomicQueue(ChunkLoad);
+    const ChunkLoadThread = util.ThreadGroup(Vec3i);
+
     const Self = @This();
 
     pub fn init(self: *Self, allocator: Allocator, volume: *Volume) !void {
@@ -39,15 +56,22 @@ pub const VolumeManager = struct {
             .volume = volume,
             .load_center = Vec3i.fill(std.math.maxInt(i32)),    // garuntee the first load center will be different
             .loaded_chunk_queue = try ChunkAtomicQueue.init(allocator),
+            .load_queue = try ChunkLoadQueue.init(allocator),
         };
         try self.load_thread_group.init(allocator, config.load_group_config, processLoadChunk);
         try self.load_thread_group.spawn(.{});
+        try self.load_thread.init(allocator, .{ .thread_count = .{ .count = 1, }}, processLoadCenterChanged);
+        try self.load_thread.spawn(.{});
     }
 
     pub fn deinit(self: *Self) void {
         self.load_thread_group.join();
         self.load_thread_group.deinit(self.allocator);
         self.loaded_chunk_queue.deinit();
+        self.load_thread.join();
+        self.load_thread.deinit(self.allocator);
+        self.load_queue.deinit();
+        self.chunk_positions.deinit(self.allocator);
     }
 
     pub fn update(self: *Self, load_center: Vec3) !void {
@@ -60,51 +84,80 @@ pub const VolumeManager = struct {
             .floor().cast(i32)
         );
         if (!new_center.eql(self.load_center)) {
-            self.load_center = new_center;
-            const load_min = new_center.sub(Vec3i.fill(@intCast(i32, self.load_radius)));
-            const load_max = new_center.add(Vec3i.fill(@intCast(i32, self.load_radius)));
-            var chunk_list = std.ArrayList(*Chunk).init(self.allocator);
-            defer chunk_list.deinit();
-            var chunks_iter = self.volume.chunks.valueIterator();
-            while (chunks_iter.next()) |chunk| {
-                const pos = chunk.*.position;
-                if (
-                    (pos.v[0] < load_min.v[0] or pos.v[0] >= load_max.v[0]) or
-                    (pos.v[1] < load_min.v[1] or pos.v[1] >= load_max.v[1]) or
-                    (pos.v[2] < load_min.v[2] or pos.v[2] >= load_max.v[2])
-                ) {
-                    try chunk_list.append(chunk.*);
-                }
-            }
-            for (chunk_list.items) |chunk| {
-                if (self.callback_chunk_unloaded) |callback_chunk_unloaded| {
-                    try callback_chunk_unloaded.call(chunk);
-                }
-                self.volume.deactivateChunk(chunk.position);
-            }
-            chunk_list.clearRetainingCapacity();
-            var x = load_min.v[0];
-            while (x < load_max.v[0]) : (x += 1) {
-                var y = load_min.v[1];
-                while (y < load_max.v[1]) : (y += 1) {
-                    var z = load_min.v[2];
-                    while (z < load_max.v[2]) : (z += 1) {
-                        const pos = Vec3i.init(.{x, y, z});
-                        if (!self.volume.chunks.contains(pos)) {
-                            const chunk = try self.volume.activateChunk(pos);
-                            chunk.state = .loading;
-                            try chunk_list.append(chunk);
-                        }
-                    }
-                }
-            }
-            try self.load_thread_group.submitItems(chunk_list.items);
+            try self.load_thread.submitItem(new_center);
         }
+        // self.chunks_mutex.lock();
+        while (self.load_queue.dequeue()) |load| {
+            switch (load.state) {
+                .loading => {
+                    const chunk = try self.volume.activateChunk(load.chunk_position);
+                    chunk.state = .loading;
+                    try self.load_thread_group.submitItem(chunk);
+                },
+                .unloading => {
+                    if (self.volume.chunks.get(load.chunk_position)) |chunk| {
+                        if (self.callback_chunk_unloaded) |callback_chunk_unloaded| {
+                            try callback_chunk_unloaded.call(chunk);
+                        }
+                        self.volume.deactivateChunk(chunk.position);
+                    }
+                },
+            }
+        }
+        // self.chunks_mutex.unlock();
         while (self.loaded_chunk_queue.dequeue()) |chunk| {
             if (self.callback_chunk_loaded) |callback_chunk_loaded| {
                 try callback_chunk_loaded.call(chunk);
             }
         }
+    }
+
+    fn processLoadCenterChanged(thread: *ChunkLoadThread, new_center: Vec3i, _:usize) !void {
+        const self = @fieldParentPtr(Self,"load_thread", thread);
+        self.load_center = new_center;
+        const load_min = new_center.sub(Vec3i.fill(@intCast(i32, self.load_radius)));
+        const load_max = new_center.add(Vec3i.fill(@intCast(i32, self.load_radius)));
+        
+        var i: usize = 0;
+        while (i < self.chunk_positions.items.len) : (i +%= 1) {
+            const pos = self.chunk_positions.items[i];
+            if (
+                (pos.v[0] < load_min.v[0] or pos.v[0] >= load_max.v[0]) or
+                (pos.v[1] < load_min.v[1] or pos.v[1] >= load_max.v[1]) or
+                (pos.v[2] < load_min.v[2] or pos.v[2] >= load_max.v[2])
+            ) {
+                _ = self.chunk_positions.swapRemove(i);
+                i -%= 1;
+                try self.load_queue.enqueue(.{ .chunk_position = pos, .state = .unloading});
+            }
+        }
+
+        // chunk_list.clearRetainingCapacity();
+        var x = load_min.v[0];
+        while (x < load_max.v[0]) : (x += 1) {
+            var y = load_min.v[1];
+            while (y < load_max.v[1]) : (y += 1) {
+                var z = load_min.v[2];
+                while (z < load_max.v[2]) : (z += 1) {
+                    const pos = Vec3i.init(.{x, y, z});
+                    if (!self.chunkPositionsContains(pos)) {
+                        try self.chunk_positions.append(self.allocator, pos);
+                        try self.load_queue.enqueue(.{ .chunk_position = pos, .state = .loading});
+                        // try chunk_list.append(chunk);
+                    }
+                }
+            }
+        }
+        // try self.load_thread_group.submitItems(chunk_list.items);
+    }
+
+    fn chunkPositionsContains(self: Self, position: Vec3i) bool {
+        for (self.chunk_positions.items) |pos| {
+            if (position.eql(pos)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     fn processLoadChunk(group: *ChunkThreadGroup, chunk: *Chunk, _: usize) !void {

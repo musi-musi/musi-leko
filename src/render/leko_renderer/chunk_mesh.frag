@@ -32,7 +32,7 @@ void main() {
     float noise = texture2D(perlin, frag_uv_texture).x;
     noise = clamp((noise - 0.5) * 2.0 * 100 + 0.5, 0, 1);
     float color = mix(0.3, 0.35, noise);
-    FragColor.xyz = vec3(color * ao * light * (1 - frag_fog));
-    // FragColor.xyz = vec3(color * light * (1 - frag_fog));
+    FragColor.xyz = vec3(color * ao * light);
+    // FragColor.xyz = vec3(color * ao * light * (1 - frag_fog));
     FragColor.w = 1;
 }
