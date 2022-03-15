@@ -17,6 +17,12 @@ const LekoIndex = leko.LekoIndex;
 var _array: Array = undefined;
 var _index_buffer: Array.IndexBuffer = undefined;
 var _shader: Shader = undefined;
+var _perlin_texture: Texture = undefined;
+
+const Texture = gl.Texture(.texture_2d, .{
+    .channels = .rgba,
+    .component = .byte,
+});
 
 /// ```
 ///     0 --- 1
@@ -46,6 +52,7 @@ const Shader = shader.Shader(&.{
         gl.uniform("chunk_position", .vec3i),
         
         gl.uniform("light", .vec3),
+        gl.uniformTextureUnit("perlin"),
     },
     @embedFile("chunk_mesh.vert"),
     @embedFile("chunk_mesh.frag"),
@@ -61,12 +68,41 @@ pub fn init() !void {
 
     const light = Vec3.init(.{1, 3, 2}).norm();
     _shader.uniforms.set("light", light.v);
+
+    _perlin_texture = Texture.init();
+
+    const size = 256;
+    // const perlin_wrap = 64;
+    const Data = [size][size][4]u8;
+    // const perlin = nm.noise.Perlin2(perlin_wrap){};
+    var data: Data = undefined;
+    var rng = std.rand.DefaultPrng.init(0);
+    const r = rng.random();
+    var x: u32 = 0;
+    while (x < size) : (x += 1) {
+        // const u = @intToFloat(u8, x) / @intToFloat(u8, size) * @intToFloat(u8, perlin_wrap);
+        var y: u32 = 0;
+        while (y < size) : (y += 1) {
+            // const v = @intToFloat(u8, y) / @intToFloat(u8, size) * @intToFloat(u8, perlin_wrap);
+            data[x][y][0] = r.int(u8);
+            data[x][y][1] = r.int(u8);
+            data[x][y][2] = r.int(u8);
+            data[x][y][3] = r.int(u8);
+            // data[x][y][0] = perlin.sample(.{u, v});
+        }
+    }
+    
+    _perlin_texture.alloc(size, size);
+    _perlin_texture.upload(size, size, @ptrCast(*[size * size][4]u8, &data));
+    _shader.uniforms.set("perlin", 1);
+    _perlin_texture.setFilter(.linear, .linear);
 }
 
 pub fn deinit() void {
     _array.deinit();
     _index_buffer.deinit();
     _shader.deinit();
+    _perlin_texture.deinit();
 }
 
 pub fn setViewMatrix(view: nm.Mat4) void {
@@ -78,6 +114,7 @@ pub fn startDraw() void {
     _shader.uniforms.set("proj", proj.v);
     _array.bind();
     _shader.use();
+    _perlin_texture.bind(1);
 }
 
 pub fn bindMesh(mesh: *const ChunkMesh) void {
@@ -537,8 +574,26 @@ pub const MeshData = struct {
                     });
                 }
                 try w.writeAll(");\n");
-                try w.writeAll("const vec2 cube_uvs[4] = vec2[4](");
+                try w.writeAll("const vec2 cube_uvs_face[4] = vec2[4](");
                 try w.writeAll("vec2(0, 1), vec2(1, 1), vec2(0, 0), vec2(1, 0)");
+                try w.writeAll(");\n");
+                try w.writeAll("const vec3 cube_umat_texture[6] = vec3[6](");
+                for (std.enums.values(Cardinal3)) |card_n, i| {
+                    if (i != 0) {
+                        try w.writeAll(",");
+                    }
+                    const umat = Vec3.unitSigned(cardU(card_n));
+                    try w.print("vec3{}", .{ umat });
+                }
+                try w.writeAll(");\n");
+                try w.writeAll("const vec3 cube_vmat_texture[6] = vec3[6](");
+                for (std.enums.values(Cardinal3)) |card_n, i| {
+                    if (i != 0) {
+                        try w.writeAll(",");
+                    }
+                    const vmat = Vec3.unitSigned(cardV(card_n));
+                    try w.print("vec3{}", .{ vmat });
+                }
                 try w.writeAll(");\n");
                 try w.writeAll("const vec3 cube_positions[6][4] = vec3[6][4](");
                 for (std.enums.values(Cardinal3)) |card_n, i| {

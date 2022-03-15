@@ -13,7 +13,8 @@ uniform float fog_end = 3.75 * CHUNK_WIDTH;
 
 out float frag_light;
 out flat float frag_ao[4];
-out vec2 frag_uv;
+out vec2 frag_uv_face;
+out vec2 frag_uv_texture;
 out float frag_fog;
 
 void main() {
@@ -34,11 +35,16 @@ void main() {
     frag_ao[1] = (3 - float(ao >> 2 & 0x3)) / 3.0;
     frag_ao[2] = (3 - float(ao >> 4 & 0x3)) / 3.0;
     frag_ao[3] = (3 - float(ao >> 6 & 0x3)) / 3.0;
-    frag_uv = cube_uvs[gl_VertexID];
+    frag_uv_face = cube_uvs_face[gl_VertexID];
     vec4 pos;
     pos.xyz = position + vec3(chunk_position) * CHUNK_WIDTH;
     pos.w = 1;
     gl_Position = proj * view * pos;
+
+    frag_uv_texture.x = dot(pos.xyz, cube_umat_texture[n]);
+    frag_uv_texture.y = dot(pos.xyz, cube_vmat_texture[n]);
+
+    frag_uv_texture /= 32;
 
     vec4 eye = inverse(view) * vec4(0, 0, 0, 1);
     vec3 eye_to_pos = abs(pos.xyz - eye.xyz);

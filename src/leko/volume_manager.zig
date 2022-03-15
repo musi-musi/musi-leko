@@ -109,7 +109,7 @@ pub const VolumeManager = struct {
 
     fn processLoadChunk(group: *ChunkThreadGroup, chunk: *Chunk, _: usize) !void {
         const self = @fieldParentPtr(Self, "load_thread_group", group);
-        const perlin = nm.noise.Perlin3{};
+        const perlin = nm.noise.Perlin3(null){};
         const scale: f32 = 0.025;
         for (chunk.id_array.items) |*id, i| {
             const index = LekoIndex.initI(i);
