@@ -7,7 +7,7 @@ in float frag_fog;
 out vec4 FragColor;
 
 uniform float light_strength = 0.5;
-uniform float ao_strength = 1;
+uniform float ao_strength = 0.5;
 uniform float resolution = 8.0;
 uniform sampler2D perlin;
 // 0 --- 1
@@ -34,5 +34,6 @@ void main() {
     float color = mix(0.3, 0.35, noise);
     // FragColor.xyz = vec3(color * ao * light);
     FragColor.xyz = vec3(color * ao * light * (1 - frag_fog));
+    // FragColor.xyz = vec3(color * ao * light * frag_fog);
     FragColor.w = 1;
 }

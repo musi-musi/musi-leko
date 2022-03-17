@@ -7,8 +7,9 @@ uniform ivec3 chunk_position;
 
 uniform vec3 light;
 
-uniform float fog_start = 2.5 * CHUNK_WIDTH;
-uniform float fog_end = 3.75 * CHUNK_WIDTH;
+uniform float fog_falloff = 5;
+uniform float fog_start = 0.5;
+uniform float fog_end = 3.5;
 
 
 out float frag_light;
@@ -50,6 +51,8 @@ void main() {
     vec3 eye_to_pos = abs(pos.xyz - eye.xyz);
 
     // float dist = max(max(eye_to_pos.x, eye_to_pos.y), eye_to_pos.z);
-    float dist = length(eye_to_pos);
-    frag_fog = clamp((dist - fog_start) / (fog_end - fog_start), 0, 1);
+    float dist = length(eye_to_pos) / CHUNK_WIDTH;
+    dist = (dist - fog_start) / (fog_end - fog_start);
+    frag_fog = clamp(pow(fog_falloff, dist - 1), 0, 1);
+    // frag_fog = clamp((dist - fog_start) / (fog_end - fog_start), 0, 1);
 }
