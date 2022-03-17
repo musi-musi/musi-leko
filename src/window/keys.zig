@@ -18,6 +18,7 @@ pub fn update() void {
     states[curr_state].poll();
 }
 
+pub usingnamespace exports;
 pub const exports = struct {
 
     pub fn keyState(key: KeyCode) KeyState {
@@ -83,7 +84,7 @@ pub const KeyState = enum(c_int) {
     up = c.GLFW_RELEASE,
 };
 
-const KeyCode = blk: {
+pub const KeyCode = blk: {
     const glfw_fields = std.enums.values(GlfwKeyCode);
     var fields: [glfw_fields.len]std.builtin.TypeInfo.EnumField = undefined;
     for (glfw_fields) |gf, i| {

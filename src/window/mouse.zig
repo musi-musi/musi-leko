@@ -21,12 +21,25 @@ pub const exports = struct {
     pub fn mousePosition() Vec2 {
         return _curr_position;
     }
+
     pub fn prevMousePosition() Vec2 {
         return _prev_position;
     }
 
     pub fn mousePositionDelta() Vec2 {
         return _position_delta;
+    }
+
+    pub fn setMousePosition(position: Vec2) void {
+        c.glfwSetCursorPos(window.handle(), @floatCast(f64, position.v[0]), @floatCast(f64, position.v[1]));
+        resetMousePositionDelta();
+    }
+
+    pub fn centerMouseCursor() void {
+        const width = @intToFloat(f64, window.width());
+        const height = @intToFloat(f64, window.height());
+        c.glfwSetCursorPos(window.handle(), width / 2.0, height / 2.0);
+        resetMousePositionDelta();
     }
 
     pub fn resetMousePositionDelta() void {

@@ -20,8 +20,8 @@ var _shader: Shader = undefined;
 var _perlin_texture: Texture = undefined;
 
 const Texture = gl.Texture(.texture_2d, .{
-    .channels = .rgba,
-    .component = .byte,
+    .channels = .r,
+    .component = .float,
 });
 
 /// ```
@@ -73,7 +73,7 @@ pub fn init() !void {
 
     const size = 256;
     // const perlin_wrap = 64;
-    const Data = [size][size][4]u8;
+    const Data = [size][size][1]f32;
     // const perlin = nm.noise.Perlin2(perlin_wrap){};
     var data: Data = undefined;
     var rng = std.rand.DefaultPrng.init(0);
@@ -84,16 +84,13 @@ pub fn init() !void {
         var y: u32 = 0;
         while (y < size) : (y += 1) {
             // const v = @intToFloat(u8, y) / @intToFloat(u8, size) * @intToFloat(u8, perlin_wrap);
-            data[x][y][0] = r.int(u8);
-            data[x][y][1] = r.int(u8);
-            data[x][y][2] = r.int(u8);
-            data[x][y][3] = r.int(u8);
+            data[x][y][0] = r.floatNorm(f32);
             // data[x][y][0] = perlin.sample(.{u, v});
         }
     }
     
     _perlin_texture.alloc(size, size);
-    _perlin_texture.upload(size, size, @ptrCast(*[size * size][4]u8, &data));
+    _perlin_texture.upload(size, size, @ptrCast(*[size * size][1]f32, &data));
     _shader.uniforms.set("perlin", 1);
     _perlin_texture.setFilter(.linear, .linear);
 }

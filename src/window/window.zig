@@ -10,6 +10,7 @@ var _shape: WindowShape = undefined;
 var _display_mode: exports.DisplayMode = .windowed;
 var _vsync_mode: exports.VsyncMode = .enabled;
 
+pub usingnamespace exports;
 pub const exports = struct {
 
 
