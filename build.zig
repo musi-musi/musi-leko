@@ -27,29 +27,28 @@ pub fn build(b: *std.build.Builder) void {
     exe.addLibPath("deps");
     exe.linkSystemLibrary("glfw3");
     
-    exe.addIncludeDir("deps");
+    exe.addIncludeDir("deps/");
     exe.addCSourceFile("deps/glad.c", &[_][]const u8{"-std=c99"});
     exe.addCSourceFile("deps/stb_image.c", &[_][]const u8{"-std=c99"});
 
 
-    const flags: []const []const u8 = &.{"-std=c++11"};
+    // const flags: []const []const u8 = &.{"-std=c++11"};
 
-    exe.linkLibCpp();
 
-    exe.addCSourceFile("deps/c.cpp", flags);
+    // exe.addCSourceFile("deps/c.cpp", flags);
 
-    exe.addIncludeDir("deps/cimgui");
-    exe.addIncludeDir("deps/cimgui/imgui");
-    exe.addCSourceFile("deps/cimgui/cimgui.cpp", flags);
-    exe.addCSourceFile("deps/cimgui/imgui/imgui.cpp", flags);
-    exe.addCSourceFile("deps/cimgui/imgui/imgui_draw.cpp", flags);
-    exe.addCSourceFile("deps/cimgui/imgui/imgui_demo.cpp", flags);
-    exe.addCSourceFile("deps/cimgui/imgui/imgui_tables.cpp", flags);
-    exe.addCSourceFile("deps/cimgui/imgui/imgui_widgets.cpp", flags);
+    // exe.addIncludeDir("deps/cimgui");
+    // exe.addIncludeDir("deps/cimgui/imgui");
+    // exe.addCSourceFile("deps/cimgui/cimgui.cpp", flags);
+    // exe.addCSourceFile("deps/cimgui/imgui/imgui.cpp", flags);
+    // exe.addCSourceFile("deps/cimgui/imgui/imgui_draw.cpp", flags);
+    // exe.addCSourceFile("deps/cimgui/imgui/imgui_demo.cpp", flags);
+    // exe.addCSourceFile("deps/cimgui/imgui/imgui_tables.cpp", flags);
+    // exe.addCSourceFile("deps/cimgui/imgui/imgui_widgets.cpp", flags);
 
-    exe.addIncludeDir("deps/cimgui/imgui/backends");
-    exe.addCSourceFile("deps/cimgui/imgui/backends/imgui_impl_glfw.cpp", flags);
-    exe.addCSourceFile("deps/cimgui/imgui/backends/imgui_impl_opengl3.cpp", flags);
+    // exe.addIncludeDir("deps/cimgui/imgui/backends");
+    // exe.addCSourceFile("deps/cimgui/imgui/backends/imgui_impl_glfw.cpp", flags);
+    // exe.addCSourceFile("deps/cimgui/imgui/backends/imgui_impl_opengl3.cpp", flags);
 
     // switch (target.getOs().tag) {
     //     .windows => {
@@ -64,6 +63,7 @@ pub fn build(b: *std.build.Builder) void {
     //     else => @panic("unsupported os target"),
     // }
     // exe.linkSystemLibrary("deps/lib/cimguid");
+    exe.linkLibCpp();
     exe.linkLibC();
     exe.install();
 
