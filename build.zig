@@ -24,14 +24,33 @@ pub fn build(b: *std.build.Builder) void {
 
     addPkgs(exe);
 
-    exe.addIncludeDir("deps/inc");
-    // exe.addIncludeDir("C:/Users/sam/zig-windows-x86_64-0.8.0/lib/libc/include/any-windows-any");
-    // exe.addIncludeDir("C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.11.25503/include");
-    exe.addCSourceFile("deps/src/glad.c", &[_][]const u8{"-std=c99"});
-    exe.addCSourceFile("deps/src/stb_image.c", &[_][]const u8{"-std=c99"});
-    // exe.addIncludeDir("GLFW/include/GLFW");
-    exe.addLibPath("deps/lib");
+    exe.addLibPath("deps");
     exe.linkSystemLibrary("glfw3");
+    
+    exe.addIncludeDir("deps");
+    exe.addCSourceFile("deps/glad.c", &[_][]const u8{"-std=c99"});
+    exe.addCSourceFile("deps/stb_image.c", &[_][]const u8{"-std=c99"});
+
+
+    const flags: []const []const u8 = &.{"-std=c++11"};
+
+    exe.linkLibCpp();
+
+    exe.addCSourceFile("deps/c.cpp", flags);
+
+    exe.addIncludeDir("deps/cimgui");
+    exe.addIncludeDir("deps/cimgui/imgui");
+    exe.addCSourceFile("deps/cimgui/cimgui.cpp", flags);
+    exe.addCSourceFile("deps/cimgui/imgui/imgui.cpp", flags);
+    exe.addCSourceFile("deps/cimgui/imgui/imgui_draw.cpp", flags);
+    exe.addCSourceFile("deps/cimgui/imgui/imgui_demo.cpp", flags);
+    exe.addCSourceFile("deps/cimgui/imgui/imgui_tables.cpp", flags);
+    exe.addCSourceFile("deps/cimgui/imgui/imgui_widgets.cpp", flags);
+
+    exe.addIncludeDir("deps/cimgui/imgui/backends");
+    exe.addCSourceFile("deps/cimgui/imgui/backends/imgui_impl_glfw.cpp", flags);
+    exe.addCSourceFile("deps/cimgui/imgui/backends/imgui_impl_opengl3.cpp", flags);
+
     // switch (target.getOs().tag) {
     //     .windows => {
     //         exe.linkSystemLibrary("user32");
