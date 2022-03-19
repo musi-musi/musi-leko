@@ -160,11 +160,24 @@ pub const VolumeManager = struct {
         const self = @fieldParentPtr(Self, "load_thread_group", group);
         const perlin = nm.noise.Perlin3(null){};
         const scale: f32 = 0.025;
+
+        const octaves: u32 = 4;
+        const lacunarity: f32 = 2;
+        const gain: f32 = 0.25;
         for (chunk.id_array.items) |*id, i| {
             const index = LekoIndex.initI(i);
             const pos = chunk.position.mulScalar(Chunk.width).add(index.vector().cast(i32)).cast(f32);
-            const sample = perlin.sample(pos.mulScalar(scale).v);
-            if (sample > 0.25) {
+            // const sample = perlin.sample(pos.mulScalar(scale).v);
+            var noise: f32 = 0;
+            comptime var o: u32 = 0;
+            comptime var f = scale;
+            comptime var a: f32 = 1;
+            inline while (o < octaves) : (o += 1) {
+                noise += perlin.sample(pos.mulScalar(f).v) * a;
+                f *= lacunarity;
+                a *= gain;
+            }
+            if (noise < 0.25) {
                 id.* = 1;
             }
             else {

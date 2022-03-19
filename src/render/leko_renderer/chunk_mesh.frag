@@ -10,6 +10,7 @@ uniform float light_strength = 0.5;
 uniform float ao_strength = 0.5;
 uniform float resolution = 8.0;
 uniform sampler2D perlin;
+uniform float noise_warp_strength = 0.01;
 // 0 --- 1
 // | \   |   ^
 // |  \  |   |
@@ -29,11 +30,11 @@ void main() {
     );
     ao = mix(1, ao, ao_strength);
     float light = mix(1, frag_light, light_strength);
-    float noise = texture2D(perlin, frag_uv_texture).x;
-    noise = clamp(noise * 100, 0, 1);
-    float color = mix(0.3, 0.35, noise);
-    // FragColor.xyz = vec3(color * ao * light);
+    vec2 uv_warp = texture2D(perlin, frag_uv_texture + vec2(24.354, 56.5463)).xy;
+    float noise = texture2D(perlin, frag_uv_texture + uv_warp * noise_warp_strength).x;
+    noise = clamp(noise * 100, -1, 1);
+    float color = mix(0.3, 0.35, (noise + 1) / 2);
+    // float color = (noise + 1) / 2;
     FragColor.xyz = vec3(color * ao * light * (1 - frag_fog));
-    // FragColor.xyz = vec3(color * ao * light * frag_fog);
     FragColor.w = 1;
 }
