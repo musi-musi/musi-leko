@@ -111,7 +111,7 @@ fn addPkgs(step: *std.build.LibExeObjStep) void {
     const window = Pkg {
         .name = "window",
         .path = FileSource.relative("src/window/_.zig"),
-        .dependencies = &[_]Pkg{ c, gl, nm },
+        .dependencies = &[_]Pkg{ c, gl, nm, util },
     };
     const input = Pkg {
         .name = "input",

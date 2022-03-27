@@ -24,7 +24,7 @@ pub const Player = struct {
 
     pub fn init(self: *Self) void {
         self.* = Self {};
-        self.mouse_look = .{ .handle = &self.input_handle };
+        self.mouse_look.init(&self.input_handle);
     }
 
     pub fn update(self: *Self) void {

@@ -7,15 +7,21 @@ const InputHandle = @import("input_handle.zig").InputHandle;
 pub const MouseLook = struct {
 
     handle: *InputHandle,
-    sensitivity: f32 = 10,
+    sensitivity: f32 = 0.1,
     invert_y: bool = false,
     look_angles: nm.Vec2 = nm.Vec2.zero,
 
     const Self = @This();
 
+    pub fn init(self: *Self, input_handle: *InputHandle) void {
+        self.* = .{
+            .handle = input_handle,
+        };
+    }
+
     pub fn update(self: *Self) void {
         if (self.handle.is_active) {
-            var angles_delta = window.mousePositionDelta().mulScalar(@floatCast(f32, window.frameTime()) * self.sensitivity);
+            var angles_delta = window.mousePositionDelta().mulScalar(self.sensitivity);
             var look_x = self.look_angles.v[0] + angles_delta.v[0];
             var look_y = self.look_angles.v[1] + angles_delta.v[1];
             if (self.invert_y) {

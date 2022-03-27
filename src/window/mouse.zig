@@ -11,7 +11,7 @@ var _curr_position: Vec2 = Vec2.zero;
 var _prev_position: Vec2 = Vec2.zero;
 var _position_delta: Vec2 = Vec2.zero;
 
-
+pub usingnamespace exports;
 pub const exports = struct {
     
     pub fn rawMouseSupported() bool {

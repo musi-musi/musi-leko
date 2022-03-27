@@ -13,6 +13,8 @@ pub fn main() !void {
     try window.init(.{});
     defer window.deinit();
     
+    window.setVsyncMode(.disabled);
+
     try gui.init();
     defer gui.deinit();
 
@@ -25,8 +27,6 @@ pub fn main() !void {
     try session_renderer.init(allocator);
     defer session_renderer.deinit();
 
-    // try render.init(allocator);
-    // defer render.deinit();
     
 
     window.setMouseMode(.hidden_raw);
@@ -47,9 +47,7 @@ pub fn main() !void {
         session_renderer.render();
         gui.newFrame();
         gui.showStats();
-        gui.showDemo();
         gui.render();
 
-        // render.render();
     }
 }
