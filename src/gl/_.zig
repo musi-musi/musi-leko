@@ -20,6 +20,7 @@ pub fn init() void {
     c.glEnable(c.GL_DEPTH_TEST);
     c.glDepthFunc(c.GL_LESS);
     c.glDisable(c.GL_MULTISAMPLE);
+    // c.glEnable(c.GL_MULTISAMPLE);
     c.glEnable(c.GL_CULL_FACE);
 }
 

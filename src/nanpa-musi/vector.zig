@@ -246,6 +246,17 @@ pub fn Vector(comptime Scalar_: type, comptime dimensions_: comptime_int) type {
             }
             return res;
         }
+        
+        /// scalar floor division
+        /// only valid for signed integers
+        pub fn divFloorScalar(a: Self, b: Scalar) Self {
+            comptime asserts.assertInt(Scalar);
+            var res: Self = undefined;
+            inline for (indices) |i| {
+                res.v[i] = @divFloor(a.v[i], b);
+            }
+            return res;
+        }
 
         /// sum of components
         pub fn sum(self: Self) Scalar {

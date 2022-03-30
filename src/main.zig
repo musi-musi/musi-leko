@@ -41,13 +41,13 @@ pub fn main() !void {
                     .borderless => .windowed,
                 });
             }
+            try session.update();
+        
+            session_renderer.render();
+            gui.newFrame();
+            gui.showStats();
+            // gui.showDemo();
+            gui.render();
         }
-        try session.update();
-    
-        session_renderer.render();
-        gui.newFrame();
-        gui.showStats();
-        gui.render();
-
     }
 }

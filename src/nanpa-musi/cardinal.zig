@@ -80,5 +80,12 @@ fn Mixin(comptime Self: type, comptime dimensions_: comptime_int) type {
 }
 
 pub const Sign = enum(u1) {
-    positive, negative
+    positive, negative,
+
+    pub fn int(sign: Sign, comptime T: type) T {
+        return switch (sign) {
+            .positive => 1,
+            .negative => -1,
+        };
+    }
 };

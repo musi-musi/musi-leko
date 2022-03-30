@@ -11,17 +11,25 @@ pub var input_handle: input.InputHandle = .{ .is_active = false };
 
 var _stats_window: Window = .{
     .title = "stats",
-    .flags = &.{.no_move, .no_decoration},
+    .flags = &.{.no_move, .no_decoration, .always_auto_resize},
 };
 
+const font_ttf = @embedFile("VictorMono-Medium.ttf");
+var _font_data: [font_ttf.len]u8 = undefined;
+
 pub fn init() !void {
-    _ = c.igCreateContext(0);
+    _ = c.igCreateContext(null);
     _ = c.imgui_glfw_init(window.handle(), 1);
     _ = c.imgui_gl_init();
 
+
     const io = c.igGetIO();
-    io.*.FontGlobalScale = 2;
+    // io.*.FontGlobalScale = 2;
     io.*.IniFilename = null;
+
+    std.mem.copy(u8, &_font_data, font_ttf);
+
+    _ = c.ImFontAtlas_AddFontFromMemoryTTF(io.*.Fonts, &_font_data, _font_data.len, 24, null, null);
 
     const style = c.igGetStyle();
     style.*.WindowBorderSize = 0;
@@ -42,9 +50,13 @@ pub fn render() void {
 }
 
 pub fn deinit() void {
+
+    // ok for some reason freeing io.Fonts in DestroyContext causes a crash
+    // so we just. dont destroy it for now
+    // this should be fine. dont worry about it i just dont wanna fix it yet
+    // c.igDestroyContext(null);
     c.imgui_gl_shutdown();
     c.imgui_glfw_shutdown();
-    c.igDestroyContext(0);
 }
 
 pub fn showDemo() void {
@@ -58,8 +70,8 @@ pub fn showStats() void {
         defer _stats_window.end();
         _stats_window.position(.{8, 8});
         const frame_time = @floatCast(f32, window.frameTime());
-        widgets.text(64, "fps:   {d: >5.2}", .{1 / frame_time});
-        widgets.text(64, "delta: {d: >5.4}", .{frame_time});
+        widgets.text(64, "fps:   {d: >8.3}", .{1 / frame_time});
+        widgets.text(64, "delta: {d: >8.6}", .{frame_time});
     }
 }
 

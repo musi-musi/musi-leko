@@ -11,7 +11,8 @@ const Vec3 = nm.Vec3;
 const Cardinal3 = nm.Cardinal3;
 const Allocator = std.mem.Allocator;
 const Chunk = leko.Chunk;
-const LekoIndex = leko.LekoIndex;
+const Address = leko.Address;
+const Reference = leko.Reference;
 
 
 var _array: Array = undefined;
@@ -119,12 +120,12 @@ pub fn startDraw() void {
     _perlin_texture.bind(1);
 }
 
-pub fn bindMesh(mesh: *const ChunkMesh) void {
+pub fn bindMesh(mesh: *ChunkMesh) void {
     _array.buffer_binds.base.bindBuffer(mesh.base_buffer);
     _shader.uniforms.set("chunk_position", mesh.chunk.position.v);
 }
 
-pub fn drawMesh(mesh: *const ChunkMesh) void {
+pub fn drawMesh(mesh: *ChunkMesh) void {
     _ = mesh;
     if (mesh.quad_count > 0 and mesh.has_uploaded) {
         gl.drawElementsInstanced(.triangles, 6, .uint, mesh.quad_count);
@@ -141,7 +142,7 @@ fn projectionMatrix() nm.Mat4 {
 
 pub const ChunkMesh = struct {
 
-    chunk: *const Chunk,
+    chunk: *Chunk,
     base_buffer: QuadBaseBuffer,
     data: MeshData,
     quad_count: usize = 0,
@@ -163,7 +164,7 @@ pub const ChunkMesh = struct {
         middle_border,
     };
 
-    pub fn init(self: *Self, chunk: *const Chunk) void {
+    pub fn init(self: *Self, chunk: *Chunk) void {
         self.* = .{
             .chunk = chunk,
             .base_buffer = QuadBaseBuffer.init(),
@@ -245,30 +246,30 @@ pub const MeshData = struct {
         self.base_border.shrinkRetainingCapacity(0);
     }
 
-    pub fn generateMiddle(self: *Self, allocator: Allocator, chunk: *const leko.Chunk) !void {
+    pub fn generateMiddle(self: *Self, allocator: Allocator, chunk: *Chunk) !void {
         self.base_middle.shrinkRetainingCapacity(0);
         const cardinals = comptime std.enums.values(Cardinal3);
         inline for (cardinals) |card_n| {
             var face_iter = FaceIterator(1, card_n){};
             while (face_iter.next()) |index|{
-                var cursor = Cursor.init(chunk, index);
-                var is_opaque = opacity(cursor) == .solid;
+                var reference = Reference.init(chunk, index);
+                var is_opaque = opacity(reference) == .solid;
                 var neighbor_is_opaque = is_opaque;
-                cursor = cursor.decr(.middle, card_n).?;
+                reference = reference.decrUnchecked(card_n);
                 var n: u32 = 1;
                 while (n < Chunk.width - 1) : (n += 1) {
-                    is_opaque = opacity(cursor) == .solid;
+                    is_opaque = opacity(reference) == .solid;
                     if (is_opaque and !neighbor_is_opaque) {
-                        try appendQuadBase(allocator, &self.base_middle, .middle, cursor, card_n);
+                        try appendQuadBase(allocator, &self.base_middle, .middle, reference, card_n);
                     }
                     neighbor_is_opaque = is_opaque;
-                    cursor = cursor.decr(.middle, card_n).?;
+                    reference = reference.decrUnchecked(card_n);
                 }
             }
         }
     }
 
-    pub fn generateBorder(self: *Self, allocator: Allocator, chunk: *const leko.Chunk) !void {
+    pub fn generateBorder(self: *Self, allocator: Allocator, chunk: *Chunk) !void {
         self.base_border.shrinkRetainingCapacity(0);
         const max = Chunk.width - 1;
         
@@ -303,19 +304,19 @@ pub const MeshData = struct {
         break :blk result;
     };
 
-    fn appendQuadBase(allocator: Allocator, list: *std.ArrayListUnmanaged(QuadBase), comptime part: Part, cursor: Cursor, comptime normal: Cardinal3) !void {
+    fn appendQuadBase(allocator: Allocator, list: *std.ArrayListUnmanaged(QuadBase), comptime part: Part, reference: Reference, comptime normal: Cardinal3) !void {
         return try list.append(allocator, QuadBase {
-            .base = (@as(u32, cursor.position.v) << 3 | comptime @enumToInt(normal)) << 8 | computeAO(cursor, part, normal),
+            .base = (@as(u32, reference.address.v) << 3 | comptime @enumToInt(normal)) << 8 | computeAO(reference, part, normal),
         });
     }
 
-    fn appendBorderLekoBase(self: *Self, allocator: Allocator, chunk: *const Chunk, x: u32, y: u32, z: u32) !void{ 
-        var cursor = Cursor.init(chunk, LekoIndex.init(u32, .{x, y, z}));
-        if (opacity(cursor) == .solid) {
+    fn appendBorderLekoBase(self: *Self, allocator: Allocator, chunk: *Chunk, x: u32, y: u32, z: u32) !void{ 
+        var reference = Reference.init(chunk, Address.init(u32, .{x, y, z}));
+        if (opacity(reference) == .solid) {
             inline for (comptime std.enums.values(Cardinal3)) |normal| {
-                if (cursor.incr(.border, normal)) |neighbor| {
+                if (reference.incr(normal)) |neighbor| {
                     if (opacity(neighbor) == .transparent) {
-                        try appendQuadBase(allocator, &self.base_border, .border, cursor, normal);
+                        try appendQuadBase(allocator, &self.base_border, .border, reference, normal);
                     }
                 }
             }
@@ -327,8 +328,8 @@ pub const MeshData = struct {
         solid = 1,
     };
 
-    fn opacity(cursor: Cursor) Opacity {
-        return switch (cursor.chunk.id_array.get(cursor.position)) {
+    fn opacity(reference: Reference) Opacity {
+        return switch (reference.chunk.id_array.get(reference.address)) {
             0 => .transparent,
             else => .solid,
         };
@@ -345,7 +346,7 @@ pub const MeshData = struct {
             const card_u = cardU(normal);
             const card_v = cardV(normal);
 
-            pub fn next(self: *@This()) ?LekoIndex {
+            pub fn next(self: *@This()) ?Address {
                 if (self.v >= end) {
                     return null;
                 }
@@ -360,10 +361,10 @@ pub const MeshData = struct {
                 }
             }
 
-            fn index(self: @This()) LekoIndex {
-                const u = LekoIndex.single(u32, self.u, comptime card_u.axis());
-                const v = LekoIndex.single(u32, self.v, comptime card_v.axis());
-                const n = LekoIndex.edge(u32, 0, normal);
+            fn index(self: @This()) Address {
+                const u = Address.single(u32, self.u, comptime card_u.axis());
+                const v = Address.single(u32, self.v, comptime card_v.axis());
+                const n = Address.edge(u32, 0, normal);
                 return .{
                     .v = u.v + v.v + n.v
                 };
@@ -384,7 +385,7 @@ pub const MeshData = struct {
 
     //         x: u32 = start,
 
-    //         pub fn next(self: *@This()) ?LekoIndex {
+    //         pub fn next(self: *@This()) ?Address {
     //             return null;
     //         }
 
@@ -413,13 +414,15 @@ pub const MeshData = struct {
         };
     }
 
-    fn computeAO(cursor: Cursor, comptime part: Part, comptime normal: Cardinal3) u8 {
+    fn computeAO(reference: Reference, comptime part: Part, comptime normal: Cardinal3) u8 {
         const u = comptime cardU(normal);
         const v = comptime cardV(normal);
 
-        var c = cursor;
+        var r = switch (part) {
+            .middle => reference.incrUnchecked(normal),
+            .border => reference.incr(normal) orelse return 0,
+        };
 
-        c = c.incr(part, normal) orelse return 0;
         
 
         const Move = struct {
@@ -441,14 +444,20 @@ pub const MeshData = struct {
         var neighbors: u8 = 0;
         inline for (moves) |move, i| {
             switch (part) {
-                .middle => {},
-                .border => {},
+                .middle => {
+                    switch (move.sign) {
+                        .incr => r = r.incrUnchecked(move.direction),
+                        .decr => r = r.decrUnchecked(move.direction),
+                    }
+                },
+                .border => {
+                    switch (move.sign) {
+                        .incr => r = r.incr(move.direction) orelse return 0,
+                        .decr => r = r.decr(move.direction) orelse return 0,
+                    }
+                },
             }
-            switch (move.sign) {
-                .incr => c = c.incr(part, move.direction) orelse return 0,
-                .decr => c = c.decr(part, move.direction) orelse return 0,
-            }
-            neighbors |= @enumToInt(opacity(c)) << i;
+            neighbors |= @enumToInt(opacity(r)) << i;
         }
         return ao_table[neighbors];
     }
@@ -488,74 +497,7 @@ pub const MeshData = struct {
         break :blk table;
     };
 
-    const Cursor = struct {
-        
-        chunk: *const Chunk,
-        position: LekoIndex,
-
-        pub fn init(chunk: *const Chunk, position: LekoIndex) Cursor {
-            return .{
-                .chunk = chunk,
-                .position = position,
-            };
-        }
-
-        pub fn incr(cursor: Cursor, comptime part: Part, comptime direction: Cardinal3) ?Cursor {
-            var result = cursor;
-            switch (part) {
-                .middle => {
-                    result.position = result.position.incr(direction);
-                },
-                .border => {
-                    const pos = direction;
-                    const neg = comptime direction.neg();
-                    if (result.position.isEdge(pos)) {
-                        if (result.chunk.neighbor(pos)) |neighbor| {
-                            result.chunk = neighbor;
-                            result.position = result.position.toEdge(neg);
-                        }
-                        else {
-                            return null;
-                        }
-                    }
-                    else {
-                        result.position = result.position.incr(pos);
-                    }
-                }
-            }
-            return result;
-        }
-
-        pub fn decr(cursor: Cursor, comptime part: Part, comptime direction: Cardinal3) ?Cursor {
-            var result = cursor;
-            switch (part) {
-                .middle => {
-                    result.position = result.position.decr(direction);
-                },
-                .border => {
-                    const pos = direction;
-                    const neg = comptime direction.neg();
-                    if (result.position.isEdge(neg)) {
-                        if (result.chunk.neighbor(neg)) |neighbor| {
-                            result.chunk = neighbor;
-                            result.position = result.position.toEdge(pos);
-                        }
-                        else {
-                            return null;
-                        }
-                    }
-                    else {
-                        result.position = result.position.decr(pos);
-                    }
-                }
-            }
-            return result;
-        }
-
-
-
-
-    };
+    
 
     fn createShaderHeader() [:0]const u8 {
         const Header = struct {

@@ -85,6 +85,7 @@ pub fn init(config: Config) !void {
     c.glfwWindowHint(c.GLFW_CONTEXT_VERSION_MINOR, gl.config.version_minor);
     c.glfwWindowHint(c.GLFW_OPENGL_PROFILE, c.GLFW_OPENGL_CORE_PROFILE);
     c.glfwWindowHint(c.GLFW_OPENGL_FORWARD_COMPAT, c.GL_TRUE);
+    c.glfwWindowHint(c.GLFW_SAMPLES, 4);
 
     _width = config.width;
     _height = config.height;

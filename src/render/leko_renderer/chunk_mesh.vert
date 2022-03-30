@@ -7,8 +7,8 @@ uniform ivec3 chunk_position;
 
 uniform vec3 light;
 
-uniform float fog_falloff = 3;
-uniform float fog_start = 2;
+uniform float fog_falloff = 5;
+uniform float fog_start = 1.5;
 uniform float fog_end = 3.75;
 
 
