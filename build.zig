@@ -30,13 +30,15 @@ pub fn build(b: *std.build.Builder) void {
     const c_flags = .{ "-std=c99", "-I./deps/"};
 
     exe.addIncludeDir("deps/");
-    exe.addCSourceFile("deps/glad.c", &c_flags);
+    exe.addIncludeDir("deps/glad/include");
+    exe.addCSourceFile("deps/glad/src/glad.c", &c_flags);
     exe.addCSourceFile("deps/stb_image.c", &c_flags);
 
 
     const flags: []const []const u8 = &.{
         "-std=c++11",
         "-I./deps",
+        "-I./deps/glad/include",
         "-I./deps/cimgui",
         "-I./deps/cimgui/imgui",
         "-I./deps/imgui_impl",

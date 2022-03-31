@@ -7,6 +7,7 @@ const leko = @import("_.zig");
 const Volume = leko.Volume;
 const Chunk = leko.Chunk;
 const Address = leko.Address;
+const Reference = leko.Reference;
 
 const config = @import("config.zig").volume_manager;
 
@@ -167,8 +168,8 @@ pub const VolumeManager = struct {
         const lacunarity: f32 = 2;
         const gain: f32 = 0.35;
         for (chunk.id_array.items) |*id, i| {
-            const index = Address.initI(i);
-            var pos = chunk.position.mulScalar(Chunk.width).add(index.vector().cast(i32)).cast(f32);
+            const reference = Reference.init(chunk, Address.initI(i));
+            var pos = reference.globalPosition().cast(f32);
             pos = pos.mul(Vec3.init(.{0.5, 1, 0.5}));
             // const sample = perlin.sample(pos.mulScalar(scale).v);
             var noise: f32 = 0;

@@ -2,7 +2,9 @@ const std = @import("std");
 const nm = @import("nm");
 const window = @import("window");
 
-const InputHandle = @import("input_handle.zig").InputHandle;
+const input = @import("_.zig");
+
+const InputHandle = input.InputHandle;
 
 pub const MouseLook = struct {
 

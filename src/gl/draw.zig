@@ -20,10 +20,7 @@ pub const DepthBits = enum {
 };
 
 pub fn clearDepth(comptime bits: DepthBits, depth: bits.Type()) void {
-    switch (bits) {
-        .float => c.glClearDepthf(depth),
-        .double => c.glClearDepth(depth),
-    }
+    c.glClearDepth(@floatCast(f64, depth));
 }
 
 pub fn clearStencil(stencil: i32) void {

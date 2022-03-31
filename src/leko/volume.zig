@@ -1,10 +1,11 @@
 const std = @import("std");
 const nm = @import("nm");
 
-const chunk_ = @import("chunk.zig");
+const leko = @import("_.zig");
+
 const util = @import("util");
 
-const Chunk = chunk_.Chunk;
+const Chunk = leko.Chunk;
 
 const Vec3i = nm.Vec3i;
 const vec3i = nm.vec3i;

@@ -44,6 +44,7 @@ pub const exports = struct {
 
     pub fn resetMousePositionDelta() void {
         _prev_position = getPosition();
+        _curr_position = getPosition();
         _position_delta = Vec2.zero;
     }
 

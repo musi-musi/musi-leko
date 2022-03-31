@@ -4,8 +4,12 @@ const nm = @import("nm");
 const leko = @import("_.zig");
 
 const Chunk = leko.Chunk;
+const Volume = leko.Volume;
 
 const Cardinal3 = nm.Cardinal3;
+
+const Vec3u = nm.Vec3u;
+const Vec3i = nm.Vec3i;
 
 pub const Address = struct {
     /// MSB <-> LSB
@@ -14,8 +18,6 @@ pub const Address = struct {
 
     pub const Value = std.meta.Int(.unsigned, Chunk.width_bits * 3);
     pub const Width = std.meta.Int(.unsigned, Chunk.width_bits);
-    const IWidth = std.meta.Int(.signed, Chunk.width_bits);
-    pub const Vector = nm.Vec3u;
 
     const Self = @This();
 
@@ -72,9 +74,8 @@ pub const Address = struct {
         };
     }
 
-
-    pub fn vector(self: Self) Vector {
-        return Vector.init(.{
+    pub fn localPosition(self: Self) Vec3i {
+        return Vec3i.init(.{
             @truncate(Width, self.v >> Chunk.width_bits * 2),
             @truncate(Width, self.v >> Chunk.width_bits * 1),
             @truncate(Width, self.v >> Chunk.width_bits * 0),
@@ -118,6 +119,17 @@ pub const Reference = struct {
         };
     }
 
+    pub fn initGlobalPosition(volume: *Volume, position: Vec3u) ?Self {
+        const chunk_position = position.divFloorScalar(Chunk.width);
+        if (volume.chunks.get()) |chunk| {
+            const local_position = position.sub(chunk_position.mul(Chunk.width));
+            return init(chunk, Address.init(i32, local_position.v));
+        }
+        else {
+            return null;
+        }
+    }
+
     pub fn incrUnchecked(self: Self, comptime direction: Cardinal3) Self {
         return init(self.chunk, self.address.incrUnchecked(direction));
     }
@@ -147,6 +159,10 @@ pub const Reference = struct {
 
     pub fn decr(self: Self, comptime direction: Cardinal3) ?Self {
         return self.incr(comptime direction.neg());
+    }
+
+    pub fn globalPosition(self: Self) Vec3i {
+        return self.chunk.position.mulScalar(Chunk.width).add(self.address.localPosition());
     }
 
 };
