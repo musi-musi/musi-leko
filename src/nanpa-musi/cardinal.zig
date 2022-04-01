@@ -64,6 +64,10 @@ fn Mixin(comptime Self: type, comptime dimensions_: comptime_int) type {
         pub const Axis = Axis_(dimensions);
         const AxisTag = std.meta.Tag(Axis);
 
+        pub fn init(a: Axis, s: Sign) Self {
+            return @intToEnum(Self, @intCast(u32, @enumToInt(a)) * 2 + @enumToInt(s));
+        }
+
         pub fn axis(self: Self) Axis {
             return @intToEnum(Axis, @truncate(AxisTag, @enumToInt(self) >> 1));
         }
@@ -82,7 +86,7 @@ fn Mixin(comptime Self: type, comptime dimensions_: comptime_int) type {
 pub const Sign = enum(u1) {
     positive, negative,
 
-    pub fn int(sign: Sign, comptime T: type) T {
+    pub fn scalar(sign: Sign, comptime T: type) T {
         return switch (sign) {
             .positive => 1,
             .negative => -1,

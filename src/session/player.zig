@@ -1,5 +1,6 @@
 const std = @import("std");
 const nm = @import("nm");
+const session = @import("_.zig");
 
 const window = @import("window");
 const input = @import("input");
@@ -9,10 +10,15 @@ const leko = @import("leko");
 const Vec3 = nm.Vec3;
 const Vec3i = nm.Vec3i;
 const Mat4 = nm.Mat4;
+const Bounds3 = nm.Bounds3;
 
 pub const Player = struct {
 
-    position: Vec3 = Vec3.zero,
+    bounds: Bounds3 = .{
+        .center = Vec3.zero,
+        .radius = Vec3.init(.{0.8, 1.8, 0.8}),
+    },
+    eye_height: f32 = 0.9,
     move_speed: f32 = 10,
     noclip_enabled: bool = true,
     noclip_speed: f32 = 50,
@@ -29,26 +35,38 @@ pub const Player = struct {
 
     pub fn update(self: *Self) void {
         const delta = @floatCast(f32, window.frameTime());
-        if (self.noclip_enabled) {
-            if (self.input_handle.is_active) {
-                self.mouse_look.update();
-                const view_matrix = self.mouse_look.viewMatrix();
-                const forward = view_matrix.transformDirection(nm.Vec3.unit(.z)).mulScalar(delta * self.noclip_speed);
-                const right = view_matrix.transformDirection(nm.Vec3.unit(.x)).mulScalar(delta * self.noclip_speed);
-                const up = nm.Vec3.unit(.y).mulScalar(delta * self.noclip_speed);
-                if (window.keyIsDown(.w)) self.position = self.position.add(forward);
-                if (window.keyIsDown(.s)) self.position = self.position.sub(forward);
-                if (window.keyIsDown(.a)) self.position = self.position.sub(right);
-                if (window.keyIsDown(.d)) self.position = self.position.add(right);
-                if (window.keyIsDown(.space)) self.position = self.position.add(up);
-                if (window.keyIsDown(.left_shift)) self.position = self.position.sub(up);
+        var move = Vec3.zero;
+        if (self.input_handle.is_active) {
+            if (window.keyWasPressed(.z)) {
+                self.noclip_enabled = !self.noclip_enabled;
             }
+            self.mouse_look.update();
+            const view_matrix = self.mouse_look.viewMatrix();
+            const forward = view_matrix.transformDirection(nm.Vec3.unit(.z)).mulScalar(delta);
+            const right = view_matrix.transformDirection(nm.Vec3.unit(.x)).mulScalar(delta);
+            const up = nm.Vec3.unit(.y).mulScalar(delta);
+            if (window.keyIsDown(.w)) move = move.add(forward);
+            if (window.keyIsDown(.s)) move = move.sub(forward);
+            if (window.keyIsDown(.a)) move = move.sub(right);
+            if (window.keyIsDown(.d)) move = move.add(right);
+            if (window.keyIsDown(.space)) move = move.add(up);
+            if (window.keyIsDown(.left_shift)) move = move.sub(up);
+        }
+        if (self.noclip_enabled) {
+            self.bounds.center = self.bounds.center.add(move.mulScalar(self.noclip_speed));
+        }
+        else {
+            move = move.mulScalar(self.move_speed);
+            const volume = session.volume();
+            _ = leko.moveBoundsAxis(volume, &self.bounds, move.get(.x), .x);
+            _ = leko.moveBoundsAxis(volume, &self.bounds, move.get(.y), .y);
+            _ = leko.moveBoundsAxis(volume, &self.bounds, move.get(.z), .z);
         }
     }
 
     pub fn viewMatrix(self: Self) Mat4 {
         return nm.transform.createTranslate(
-            self.position.neg()
+            self.bounds.center.add(Vec3.init(.{0, self.eye_height, 0})).neg()
         ).mul(self.mouse_look.viewMatrix());
     }
 

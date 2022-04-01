@@ -119,10 +119,10 @@ pub const Reference = struct {
         };
     }
 
-    pub fn initGlobalPosition(volume: *Volume, position: Vec3u) ?Self {
+    pub fn initGlobalPosition(volume: *Volume, position: Vec3i) ?Self {
         const chunk_position = position.divFloorScalar(Chunk.width);
-        if (volume.chunks.get()) |chunk| {
-            const local_position = position.sub(chunk_position.mul(Chunk.width));
+        if (volume.chunks.get(chunk_position)) |chunk| {
+            const local_position = position.sub(chunk_position.mulScalar(Chunk.width));
             return init(chunk, Address.init(i32, local_position.v));
         }
         else {

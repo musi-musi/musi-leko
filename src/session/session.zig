@@ -49,14 +49,14 @@ pub fn update() !void {
         gui.input_handle.is_active = !_player.input_handle.is_active;
     }
     _player.update();
-    try _volume_manager.update(_player.position);
+    try _volume_manager.update(_player.bounds.center);
 }
 
 pub fn viewMatrix() Mat4 {
     return _player.viewMatrix();
 }
 
-pub fn volume() *const leko.Volume {
+pub fn volume() *leko.Volume {
     return &_volume;
 }
 
