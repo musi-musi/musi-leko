@@ -13,7 +13,7 @@ pub fn main() !void {
     try window.init(.{});
     defer window.deinit();
     
-    window.setVsyncMode(.disabled);
+    window.setVsyncMode(.enabled);
 
     try gui.init();
     defer gui.deinit();
@@ -40,6 +40,7 @@ pub fn main() !void {
                     .windowed => .borderless,
                     .borderless => .windowed,
                 });
+                window.setVsyncMode(.enabled);
             }
             try session.update();
         

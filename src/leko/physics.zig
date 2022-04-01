@@ -82,9 +82,9 @@ pub fn checkSolidInRangeMove(volume: *Volume, range: Range3i, comptime move: Car
 /// if no collision occurs, `null` is returned
 /// if collision occurs, return the actual distance moved
 pub fn moveBoundsAxis(volume: *Volume, bounds: *Bounds3, move: f32, comptime axis: Axis3) ?f32 {
+    const skin_width: f32 = 1e-4;
     const sign: nm.Sign = if (move < 0) .negative else .positive;
-    // const incr = sign.scalar(i32);
-    const incr_float = sign.scalar(f32);
+    const incr = sign.scalar(f32);
     const direction_pos = comptime Cardinal3.init(axis, .positive);
     const direction_neg = comptime Cardinal3.init(axis, .negative);
     var range: Range3i = undefined;
@@ -106,19 +106,19 @@ pub fn moveBoundsAxis(volume: *Volume, bounds: *Bounds3, move: f32, comptime axi
             if (space_occupied) {
                 // handle collision
                 const new_position = switch (sign) {
-                    .positive => @intToFloat(f32, range.max.get(axis)) - bounds.radius.get(axis),
-                    .negative => @intToFloat(f32, range.min.get(axis)) + bounds.radius.get(axis),
+                    .positive => @intToFloat(f32, range.max.get(axis)) - (bounds.radius.get(axis) + skin_width),
+                    .negative => @intToFloat(f32, range.min.get(axis)) + (bounds.radius.get(axis) + skin_width),
                 };
                 const delta = new_position - bounds.center.get(axis);
-                std.log.debug("{s} delta: {}!", .{@tagName(axis), delta});
+                // std.log.debug("{s} delta: {}!", .{@tagName(axis), delta});
                 bounds.center.set(axis, new_position);
                 return delta;
             }
             else {
-                bounds.center.ptrMut(axis).* += incr_float;
+                bounds.center.ptrMut(axis).* += incr;
                 range.min = bounds.min().floor().cast(i32);
                 range.max = bounds.max().ceil().cast(i32);
-                remaining -= incr_float;
+                remaining -= incr;
             }
         }
     }

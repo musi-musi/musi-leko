@@ -18,7 +18,7 @@ pub const Player = struct {
         .center = Vec3.zero,
         .radius = Vec3.init(.{0.8, 1.8, 0.8}),
     },
-    eye_height: f32 = 0.9,
+    eye_height: f32 = 1.2,
     move_speed: f32 = 10,
     noclip_enabled: bool = true,
     noclip_speed: f32 = 50,
