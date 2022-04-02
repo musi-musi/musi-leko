@@ -1,6 +1,6 @@
 const std = @import("std");
-const c = @import("c");
-const buffer = @import("buffer.zig");
+const gl = @import("_.zig");
+const c = gl.c;
 
 pub fn clearColor(color: [4]f32) void {
     c.glClearColor(color[0], color[1], color[2], color[3]);
@@ -51,15 +51,15 @@ pub const PrimitiveType = enum(c_uint) {
     triangles = c.GL_TRIANGLES,
 };
 
-pub fn drawElementsOffset(primitive_type: PrimitiveType, index_count: usize, comptime index_element: buffer.IndexElement, offset: usize) void {
+pub fn drawElementsOffset(primitive_type: PrimitiveType, index_count: usize, comptime index_element: gl.IndexElement, offset: usize) void {
     c.glDrawElements(@enumToInt(primitive_type), @intCast(c_int, index_count), @enumToInt(index_element), @intToPtr(?*anyopaque, offset));
 }
 
-pub fn drawElements(primitive_type: PrimitiveType, index_count: usize, comptime index_element: buffer.IndexElement) void {
+pub fn drawElements(primitive_type: PrimitiveType, index_count: usize, comptime index_element: gl.IndexElement) void {
     drawElementsOffset(primitive_type, index_count, index_element, 0);
 }
 
-pub fn drawElementsInstanced(primitive_type: PrimitiveType, index_count: usize, comptime index_element: buffer.IndexElement, instance_count: usize) void {
+pub fn drawElementsInstanced(primitive_type: PrimitiveType, index_count: usize, comptime index_element: gl.IndexElement, instance_count: usize) void {
     c.glDrawElementsInstanced(
         @enumToInt(primitive_type),
         @intCast(c_int, index_count),

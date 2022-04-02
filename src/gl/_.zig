@@ -1,17 +1,17 @@
-const c = @import("../c.zig");
+pub const c = @import("../c.zig");
 
 pub const config = @import("config.zig");
 
 const buffer = @import("buffer.zig");
-const array = @import("array.zig");
-const program = @import("program.zig");
-const texture = @import("texture.zig");
-const draw = @import("draw.zig");
 pub usingnamespace buffer;
+const array = @import("array.zig");
 pub usingnamespace array;
+const program = @import("program.zig");
 pub usingnamespace program;
-pub usingnamespace texture;
+const draw = @import("draw.zig");
 pub usingnamespace draw;
+const texture = @import("texture.zig");
+pub usingnamespace texture;
 
 pub fn init() void {
     if (c.gladLoadGLLoader(@ptrCast(c.GLADloadproc, c.glfwGetProcAddress)) == 0) {

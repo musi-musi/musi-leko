@@ -2,12 +2,13 @@ const std = @import("std");
 const gl = @import("gl");
 const nm = @import("nm");
 
-const shader = @import("../shader.zig");
+const debug = @import("_.zig");
+const rendering = @import("../_.zig");
 
 const Vec3 = nm.Vec3;
 const Cardinal3 = nm.Cardinal3;
 
-const Shader = shader.Shader(&.{
+const Shader = rendering.Shader(&.{
         gl.uniform("proj", .mat4),
         gl.uniform("view", .mat4),
         gl.uniform("light", .vec3),

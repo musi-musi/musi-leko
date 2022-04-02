@@ -1,13 +1,12 @@
 const std = @import("std");
-const asserts = @import("asserts.zig");
-const Axis_ = @import("axis.zig").Axis;
+const nm = @import("_.zig");
 
 pub const Cardinal2 = Cardinal(2);
 pub const Cardinal3 = Cardinal(3);
 pub const Cardinal4 = Cardinal(4);
 
 pub fn Cardinal(comptime dimensions_: comptime_int) type {
-    comptime asserts.assertValidDimensionCount(dimensions_);
+    comptime nm.assertValidDimensionCount(dimensions_);
     return switch (dimensions_) {
         1 => enum {
             x_pos,
@@ -61,7 +60,7 @@ fn Mixin(comptime Self: type, comptime dimensions_: comptime_int) type {
     return struct {
 
         pub const dimensions = dimensions_;
-        pub const Axis = Axis_(dimensions);
+        pub const Axis = nm.Axis(dimensions);
         const AxisTag = std.meta.Tag(Axis);
 
         pub fn init(a: Axis, s: Sign) Self {

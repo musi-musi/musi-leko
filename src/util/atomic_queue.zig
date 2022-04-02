@@ -1,7 +1,8 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
-const Pool = @import("pool.zig").Pool;
+const util = @import("_.zig");
+
 const os = std.os;
 const mem = std.mem;
 
@@ -26,7 +27,7 @@ pub fn LinkedListAtomicQueue(comptime T: type) type {
         tail: ?*Node = null,
         node_pool: NodePool = undefined,
 
-        const NodePool = Pool(Node);
+        const NodePool = util.Pool(Node);
 
         const Node = struct {
             next: ?*Node = null,

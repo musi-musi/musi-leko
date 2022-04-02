@@ -1,5 +1,8 @@
 const std = @import("std");
-const c = @import("c");
+
+const gui = @import("_.zig");
+const c = gui.c;
+
 const window = @import("window");
 const input = @import("input");
 

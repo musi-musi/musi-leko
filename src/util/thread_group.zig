@@ -1,10 +1,11 @@
 const std = @import("std");
 
-const AtomicQueue = @import("atomic_queue.zig").AtomicQueue;
+const util = @import("_.zig");
 
 const Thread = std.Thread;
 const Allocator = std.mem.Allocator;
-const Semaphore = @import("semaphore.zig").Semaphore;
+
+const Semaphore = util.Semaphore;
 
 pub const ThreadGroupConfig = struct {
     
@@ -29,7 +30,7 @@ pub fn ThreadGroup(comptime Item_: type) type {
         semaphore: Semaphore = .{},
 
         pub const Item = Item_;
-        pub const Queue = AtomicQueue(Item);
+        pub const Queue = util.AtomicQueue(Item);
         
         pub const ProcessItemFn = fn(*Self, Item, usize) anyerror!void;
 

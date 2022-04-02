@@ -8,13 +8,15 @@ const matrix = @import("matrix.zig");
 pub usingnamespace matrix;
 const bounds = @import("bounds.zig");
 pub usingnamespace bounds;
+const asserts = @import("asserts.zig");
+pub usingnamespace asserts;
 
 
 pub usingnamespace @import("transform.zig");
 
 pub const noise = @import("noise/_.zig");
 
-const asserts = @import("asserts.zig");
+
 
 pub fn lerp(comptime T: type, a: T, b: T, t: T) T {
     comptime asserts.assertFloat(T);

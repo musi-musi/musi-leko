@@ -1,7 +1,8 @@
 const std = @import("std");
-const c = @import("c");
+const gui = @import("_.zig");
+const c = gui.c;
+const types = gui.types;
 const nm = @import("nm");
-const types = @import("types.zig");
 
 const CStr = [:0]const u8;
 

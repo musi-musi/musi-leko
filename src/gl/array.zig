@@ -1,5 +1,5 @@
-const c = @import("c");
-const buffer = @import("buffer.zig");
+const gl = @import("_.zig");
+const c = gl.c;
 
 const std = @import("std");
 const builtin = std.builtin;
@@ -11,7 +11,7 @@ const meta = std.meta;
 /// vertex buffers can be bound to the array via the `buffer_binds` field by accessing the field for the buffer's bind
 /// ex: `array.buffer_binds.positions.bind(positions_buffer);`
 /// if using multiple vertex buffers, make sure their bind configs ensure no overlap in indices
-pub fn Array(comptime BufferBinds_: type, comptime index_element_: buffer.IndexElement) type {
+pub fn Array(comptime BufferBinds_: type, comptime index_element_: gl.IndexElement) type {
 
     return struct {
 
@@ -19,7 +19,7 @@ pub fn Array(comptime BufferBinds_: type, comptime index_element_: buffer.IndexE
         buffer_binds: BufferBinds,
 
         pub const index_element = index_element_;
-        pub const IndexBuffer = buffer.IndexBuffer(index_element);
+        pub const IndexBuffer = gl.IndexBuffer(index_element);
         pub const BufferBinds = BufferBinds_;
 
         const Self = @This();
@@ -97,7 +97,7 @@ pub fn BufferBind(comptime Attributes_: type, comptime config_: BufferBindConfig
 
         pub const config = config_;
         pub const Attributes = Attributes_;
-        pub const Buffer = buffer.VertexBuffer(Attributes);
+        pub const Buffer = gl.VertexBuffer(Attributes);
 
         const Self = @This();
 

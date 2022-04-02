@@ -1,17 +1,15 @@
 const std = @import("std");
 const math = std.math;
 
-const asserts = @import("asserts.zig");
-const vector = @import("vector.zig");
-const matrix = @import("matrix.zig");
+const nm = @import("_.zig");
 
 fn transformGeneric(comptime Scalar: type) type {
-    comptime asserts.assertFloat(Scalar);
+    comptime nm.assertFloat(Scalar);
     return struct {
 
-        pub const Vec3 = vector.Vector(Scalar, 3);
-        pub const Vec4 = vector.Vector(Scalar, 4);
-        pub const Mat4 = matrix.Matrix(Scalar, 4, 4);
+        pub const Vec3 = nm.Vector(Scalar, 3);
+        pub const Vec4 = nm.Vector(Scalar, 4);
+        pub const Mat4 = nm.Matrix(Scalar, 4, 4);
 
         pub fn createTranslate(translate: Vec3) Mat4 {
             const x = translate.get(.x);
@@ -107,7 +105,7 @@ fn transformGeneric(comptime Scalar: type) type {
             return result;
         }
 
-        /// creates an orthogonal projection matrix.
+        /// creates an orthogonal projection nm.
         /// `left`, `right`, `bottom` and `top` are the borders of the screen whereas `near` and `far` define the
         /// distance of the near and far clipping planes.
         pub fn createOrthogonal(left: Scalar, right: Scalar, bottom: Scalar, top: Scalar, near: Scalar, far: Scalar) Mat4 {

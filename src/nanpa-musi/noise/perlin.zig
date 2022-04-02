@@ -1,6 +1,6 @@
 const std = @import("std");
-const vector = @import("../vector.zig");
-const asserts = @import("../asserts.zig");
+const noise = @import("_.zig");
+const nm = @import("../_.zig");
 
 pub fn Perlin1(comptime wrap: ?usize) type { return Perlin(f32, 1, wrap); }
 pub fn Perlin2(comptime wrap: ?usize) type { return Perlin(f32, 2, wrap); }
@@ -12,13 +12,15 @@ pub fn Perlin3d(comptime wrap: ?usize) type { return Perlin(f64, 3, wrap); }
 pub fn Perlin4d(comptime wrap: ?usize) type { return Perlin(f64, 4, wrap); }
 
 pub fn Perlin(comptime Scalar_: type, comptime dimensions_: u32, comptime wrap_: ?usize) type {
+    comptime nm.assertFloat(Scalar_);
+    comptime nm.assertValidDimensionCount(dimensions_);
     return struct {
 
         pub const Scalar = Scalar_;
         pub const dimensions = dimensions_;
 
-        pub const Vector = vector.Vector(Scalar, dimensions);
-        pub const IVector = vector.Vector(isize, dimensions);
+        pub const Vector = nm.Vector(Scalar, dimensions);
+        pub const IVector = nm.Vector(isize, dimensions);
         
         const wrap = wrap_;
 

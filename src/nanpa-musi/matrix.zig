@@ -1,11 +1,10 @@
 const std = @import("std");
-const asserts = @import("asserts.zig");
-const vector = @import("vector.zig");
+const nm = @import("_.zig");
 
 pub fn Matrix(comptime Scalar_: type, comptime rows_: comptime_int, comptime cols_: comptime_int) type {
-    comptime asserts.assertFloat(Scalar_);
-    comptime asserts.assertValidDimensionCount(rows_);
-    comptime asserts.assertValidDimensionCount(cols_);
+    comptime nm.assertFloat(Scalar_);
+    comptime nm.assertValidDimensionCount(rows_);
+    comptime nm.assertValidDimensionCount(cols_);
     if (rows_ != cols_) @compileError("TODO: support non-square mats"); // TODO: support non-square mats
     return struct {
         v: Value,
@@ -13,7 +12,7 @@ pub fn Matrix(comptime Scalar_: type, comptime rows_: comptime_int, comptime col
         pub const Value = [rows][cols]Scalar;
 
         pub const Scalar = Scalar_;
-        pub const Vector = vector.Vector(Scalar, rows);
+        pub const Vector = nm.Vector(Scalar, rows);
         pub const rows = rows_;
         pub const cols = cols_;
 
@@ -56,7 +55,7 @@ pub fn Matrix(comptime Scalar_: type, comptime rows_: comptime_int, comptime col
         }
 
         /// the vector with one less dimension
-        pub const ShortVector = vector.Vector(Scalar, rows - 1);
+        pub const ShortVector = nm.Vector(Scalar, rows - 1);
 
         pub fn transformDirection(self: Self, vec: ShortVector) ShortVector {
             return self.transform(vec.addDimension(0)).removeDimension();

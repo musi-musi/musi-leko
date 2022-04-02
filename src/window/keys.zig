@@ -6,7 +6,7 @@ var states: [2]State = .{.{}, .{}};
 var curr_state: u32 = 0;
 var prev_state: u32 = 1;
 
-pub fn update() void {
+pub fn updateKeys() void {
     if (curr_state == 0) {
         curr_state = 1;
         prev_state = 0;
@@ -18,36 +18,32 @@ pub fn update() void {
     states[curr_state].poll();
 }
 
-pub usingnamespace exports;
-pub const exports = struct {
 
-    pub fn keyState(key: KeyCode) KeyState {
-        return states[curr_state].get(key);
-    }
+pub fn keyState(key: KeyCode) KeyState {
+    return states[curr_state].get(key);
+}
 
-    pub fn keyIsDown(key: KeyCode) bool {
-        return states[curr_state].get(key) == .down;
-    }
+pub fn keyIsDown(key: KeyCode) bool {
+    return states[curr_state].get(key) == .down;
+}
 
-    pub fn keyIsUp(key: KeyCode) bool {
-        return states[curr_state].get(key) == .up;
-    }
+pub fn keyIsUp(key: KeyCode) bool {
+    return states[curr_state].get(key) == .up;
+}
 
-    pub fn keyWasPressed(key: KeyCode) bool {
-        return (
-            states[curr_state].get(key) == .down and
-            states[prev_state].get(key) == .up
-        );
-    }
+pub fn keyWasPressed(key: KeyCode) bool {
+    return (
+        states[curr_state].get(key) == .down and
+        states[prev_state].get(key) == .up
+    );
+}
 
-    pub fn keyWasReleased(key: KeyCode) bool {
-        return (
-            states[curr_state].get(key) == .up and
-            states[prev_state].get(key) == .down
-        );
-    }
-
-};
+pub fn keyWasReleased(key: KeyCode) bool {
+    return (
+        states[curr_state].get(key) == .up and
+        states[prev_state].get(key) == .down
+    );
+}
 
 const State = struct {
 

@@ -1,9 +1,10 @@
 const atomic_queue = @import("atomic_queue.zig");
-const thread_group = @import("thread_group.zig");
-const event = @import("event.zig");
-const pool = @import("pool.zig");
-
 pub usingnamespace atomic_queue;
+const thread_group = @import("thread_group.zig");
 pub usingnamespace thread_group;
+const event = @import("event.zig");
 pub usingnamespace event;
+const pool = @import("pool.zig");
 pub usingnamespace pool;
+const semaphore = @import("semaphore.zig");
+pub usingnamespace semaphore;

@@ -3,14 +3,16 @@ const gl = @import("gl");
 const leko = @import("leko");
 const session = @import("session");
 
-const leko_renderer = @import("../leko_renderer/_.zig");
+const rendering = @import("../_.zig");
+
+const leko_renderer = rendering.leko_renderer;
 
 const volume_model = leko_renderer.volume_model;
 
 const Allocator = std.mem.Allocator;
 
-const VolumeModel = volume_model.VolumeModel;
-const VolumeModelManager = volume_model.VolumeModelManager;
+const VolumeModel = leko_renderer.VolumeModel;
+const VolumeModelManager = leko_renderer.VolumeModelManager;
 
 var _model: VolumeModel = undefined;
 var _model_manager: VolumeModelManager = undefined;

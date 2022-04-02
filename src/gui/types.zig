@@ -1,5 +1,6 @@
 const std = @import("std");
-const c = @import("c");
+const gui = @import("_.zig");
+const c = gui.c;
 const nm = @import("nm");
 
 const Vec2 = nm.Vec2;

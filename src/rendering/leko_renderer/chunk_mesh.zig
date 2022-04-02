@@ -4,7 +4,9 @@ const nm = @import("nm");
 const gl = @import("gl");
 const window = @import("window");
 
-const shader = @import("../shader.zig");
+
+const leko_renderer = @import("_.zig");
+const rendering = @import("../_.zig");
 
 const Vec3 = nm.Vec3;
 
@@ -14,131 +16,133 @@ const Chunk = leko.Chunk;
 const Address = leko.Address;
 const Reference = leko.Reference;
 
+pub const chunk_mesh = struct {
 
-var _array: Array = undefined;
-var _index_buffer: Array.IndexBuffer = undefined;
-var _shader: Shader = undefined;
-var _perlin_texture: Texture = undefined;
+    var _array: Array = undefined;
+    var _index_buffer: Array.IndexBuffer = undefined;
+    var _shader: Shader = undefined;
+    var _perlin_texture: Texture = undefined;
 
-const Texture = gl.Texture(.texture_2d, .{
-    .channels = .rg,
-    .component = .float,
-});
+    const Texture = gl.Texture(.texture_2d, .{
+        .channels = .rg,
+        .component = .float,
+    });
 
-/// ```
-///     0 --- 1
-///     | \   |   ^
-///     |  \  |   |
-///     |   \ |   v
-///     2 --- 3   + u -- >
-/// ```
-///  base = 0b 000000 xxxxx yyyyy zzzzz nnn aaaaaaaa
-///  - xyz  position of cube
-///  - n    0-5 face index; Cardinal3
-///  - a    ao strength per vertex, packed 0b33221100
-pub const QuadBase = struct {
-    base: u32,
-};
+    /// ```
+    ///     0 --- 1
+    ///     | \   |   ^
+    ///     |  \  |   |
+    ///     |   \ |   v
+    ///     2 --- 3   + u -- >
+    /// ```
+    ///  base = 0b 000000 xxxxx yyyyy zzzzz nnn aaaaaaaa
+    ///  - xyz  position of cube
+    ///  - n    0-5 face index; Cardinal3
+    ///  - a    ao strength per vertex, packed 0b33221100
+    pub const QuadBase = struct {
+        base: u32,
+    };
 
-pub const QuadBaseBuffer = gl.VertexBuffer(QuadBase);
+    pub const QuadBaseBuffer = gl.VertexBuffer(QuadBase);
 
-const Array = gl.Array(struct {
-    base: gl.BufferBind(QuadBase, .{.divisor = 1}),
-}, .uint);
+    const Array = gl.Array(struct {
+        base: gl.BufferBind(QuadBase, .{.divisor = 1}),
+    }, .uint);
 
-const Shader = shader.Shader(&.{
-        gl.uniform("proj", .mat4),
-        gl.uniform("view", .mat4),
+    const Shader = rendering.Shader(&.{
+            gl.uniform("proj", .mat4),
+            gl.uniform("view", .mat4),
 
-        gl.uniform("chunk_position", .vec3i),
+            gl.uniform("chunk_position", .vec3i),
+            
+            gl.uniform("light", .vec3),
+            gl.uniformTextureUnit("perlin"),
+
+            gl.uniform("time", .float),
+        },
+        @embedFile("chunk_mesh.vert"),
+        @embedFile("chunk_mesh.frag"),
+        &.{MeshData.createShaderHeader()},
+    );
+
+    pub fn init() !void {
+        _array = Array.init();
+        _index_buffer = Array.IndexBuffer.init();
+        _index_buffer.data(&.{0, 1, 3, 0, 3, 2}, .static_draw);
+        _array.bindIndexBuffer(_index_buffer);
+        _shader = try Shader.init();
+
+        const light = Vec3.init(.{1, 3, 2}).norm();
+        _shader.uniforms.set("light", light.v);
+
+        _perlin_texture = Texture.init();
+
+        const size: u32 = 256;
+        // const perlin_wrap: f32 = 64;
+        const Data = [size][size][2]f32;
+        // const perlin = nm.noise.Perlin2(null){};
+        var data: Data = undefined;
+        var rng = std.rand.DefaultPrng.init(0);
+        const r = rng.random();
+        var x: u32 = 0;
+        while (x < size) : (x += 1) {
+            // const u = @intToFloat(f32, x) / @intToFloat(f32, size - 1) * (perlin_wrap - 1);
+            var y: u32 = 0;
+            while (y < size) : (y += 1) {
+                // const v = @intToFloat(f32, y) / @intToFloat(f32, size - 1) * (perlin_wrap - 1);
+                data[x][y][0] = (r.float(f32) * 2) - 1;
+                data[x][y][1] = (r.float(f32) * 2) - 1;
+                // data[x][y][0] = perlin.sample(.{u, v});
+            }
+        }
         
-        gl.uniform("light", .vec3),
-        gl.uniformTextureUnit("perlin"),
+        _perlin_texture.alloc(size, size);
+        _perlin_texture.upload(size, size, @ptrCast(*[size * size][2]f32, &data));
+        _shader.uniforms.set("perlin", 1);
+        _perlin_texture.setFilter(.linear, .linear);
+        // _perlin_texture.setFilter(.nearest, .nearest);
+    }
 
-        gl.uniform("time", .float),
-    },
-    @embedFile("chunk_mesh.vert"),
-    @embedFile("chunk_mesh.frag"),
-    &.{MeshData.createShaderHeader()},
-);
+    pub fn deinit() void {
+        _array.deinit();
+        _index_buffer.deinit();
+        _shader.deinit();
+        _perlin_texture.deinit();
+    }
 
-pub fn init() !void {
-    _array = Array.init();
-    _index_buffer = Array.IndexBuffer.init();
-    _index_buffer.data(&.{0, 1, 3, 0, 3, 2}, .static_draw);
-    _array.bindIndexBuffer(_index_buffer);
-    _shader = try Shader.init();
+    pub fn setViewMatrix(view: nm.Mat4) void {
+        _shader.uniforms.set("view", view.v);
+    }
 
-    const light = Vec3.init(.{1, 3, 2}).norm();
-    _shader.uniforms.set("light", light.v);
+    pub fn startDraw() void {
+        var proj = projectionMatrix();
+        _shader.uniforms.set("proj", proj.v);
+        _shader.uniforms.set("time", @floatCast(f32, window.currentTime()));
+        _array.bind();
+        _shader.use();
+        _perlin_texture.bind(1);
+    }
 
-    _perlin_texture = Texture.init();
+    pub fn bindMesh(mesh: *ChunkMesh) void {
+        _array.buffer_binds.base.bindBuffer(mesh.base_buffer);
+        _shader.uniforms.set("chunk_position", mesh.chunk.position.v);
+    }
 
-    const size: u32 = 256;
-    // const perlin_wrap: f32 = 64;
-    const Data = [size][size][2]f32;
-    // const perlin = nm.noise.Perlin2(null){};
-    var data: Data = undefined;
-    var rng = std.rand.DefaultPrng.init(0);
-    const r = rng.random();
-    var x: u32 = 0;
-    while (x < size) : (x += 1) {
-        // const u = @intToFloat(f32, x) / @intToFloat(f32, size - 1) * (perlin_wrap - 1);
-        var y: u32 = 0;
-        while (y < size) : (y += 1) {
-            // const v = @intToFloat(f32, y) / @intToFloat(f32, size - 1) * (perlin_wrap - 1);
-            data[x][y][0] = (r.float(f32) * 2) - 1;
-            data[x][y][1] = (r.float(f32) * 2) - 1;
-            // data[x][y][0] = perlin.sample(.{u, v});
+    pub fn drawMesh(mesh: *ChunkMesh) void {
+        _ = mesh;
+        if (mesh.quad_count > 0 and mesh.has_uploaded) {
+            gl.drawElementsInstanced(.triangles, 6, .uint, mesh.quad_count);
         }
     }
-    
-    _perlin_texture.alloc(size, size);
-    _perlin_texture.upload(size, size, @ptrCast(*[size * size][2]f32, &data));
-    _shader.uniforms.set("perlin", 1);
-    _perlin_texture.setFilter(.linear, .linear);
-    // _perlin_texture.setFilter(.nearest, .nearest);
-}
 
-pub fn deinit() void {
-    _array.deinit();
-    _index_buffer.deinit();
-    _shader.deinit();
-    _perlin_texture.deinit();
-}
-
-pub fn setViewMatrix(view: nm.Mat4) void {
-    _shader.uniforms.set("view", view.v);
-}
-
-pub fn startDraw() void {
-    var proj = projectionMatrix();
-    _shader.uniforms.set("proj", proj.v);
-    _shader.uniforms.set("time", @floatCast(f32, window.currentTime()));
-    _array.bind();
-    _shader.use();
-    _perlin_texture.bind(1);
-}
-
-pub fn bindMesh(mesh: *ChunkMesh) void {
-    _array.buffer_binds.base.bindBuffer(mesh.base_buffer);
-    _shader.uniforms.set("chunk_position", mesh.chunk.position.v);
-}
-
-pub fn drawMesh(mesh: *ChunkMesh) void {
-    _ = mesh;
-    if (mesh.quad_count > 0 and mesh.has_uploaded) {
-        gl.drawElementsInstanced(.triangles, 6, .uint, mesh.quad_count);
+    fn projectionMatrix() nm.Mat4 {
+        const width = window.width();
+        const height = window.height();
+        const fov_rad: f32 = std.math.pi / 180.0 * 90.0;
+        const aspect = @intToFloat(f32, width) / @intToFloat(f32, height);
+        return nm.transform.createPerspective(fov_rad, aspect, 0.01, 1000);
     }
-}
-
-fn projectionMatrix() nm.Mat4 {
-    const width = window.width();
-    const height = window.height();
-    const fov_rad: f32 = std.math.pi / 180.0 * 90.0;
-    const aspect = @intToFloat(f32, width) / @intToFloat(f32, height);
-    return nm.transform.createPerspective(fov_rad, aspect, 0.01, 1000);
-}
+};
 
 pub const ChunkMesh = struct {
 
@@ -149,6 +153,8 @@ pub const ChunkMesh = struct {
     state: State = .inactive,
     mutex: std.Thread.Mutex = .{},
     has_uploaded: bool = false,
+
+    const QuadBaseBuffer = chunk_mesh.QuadBaseBuffer;
 
     const Self = @This();
 
@@ -222,6 +228,8 @@ pub const MeshData = struct {
 
     base_middle: std.ArrayListUnmanaged(QuadBase),
     base_border: std.ArrayListUnmanaged(QuadBase),
+
+    const QuadBase = chunk_mesh.QuadBase;
 
     const Self = @This();
 

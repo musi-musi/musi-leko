@@ -3,11 +3,14 @@ const nm = @import("nm");
 const util = @import("util");
 const leko = @import("leko");
 
-const chunk_mesh = @import("chunk_mesh.zig");
+const leko_renderer = @import("_.zig");
+const rendering = @import("../_.zig");
+
+const chunk_mesh = leko_renderer.chunk_mesh;
 
 const Volume = leko.Volume;
 const Chunk = leko.Chunk;
-const ChunkMesh = chunk_mesh.ChunkMesh;
+const ChunkMesh = leko_renderer.ChunkMesh;
 
 const Allocator = std.mem.Allocator;
 
@@ -15,29 +18,33 @@ const Vec3i = nm.Vec3i;
 
 const volume_manager_config = leko.config.volume_manager;
 
-pub fn init() !void {
-    try chunk_mesh.init();
-}
+pub const volume_model = struct {
 
-pub fn deinit() void {
-    chunk_mesh.deinit();
-}
-
-pub fn setViewMatrix(view: nm.Mat4) void {
-    chunk_mesh.setViewMatrix(view);
-}
-
-pub fn startDraw() void {
-    chunk_mesh.startDraw();
-}
-
-pub fn drawModel(model: *const VolumeModel) void {
-    var meshes = model.meshes.valueIterator();
-    while (meshes.next()) |mesh| {
-        chunk_mesh.bindMesh(mesh.*);
-        chunk_mesh.drawMesh(mesh.*);
+    pub fn init() !void {
+        try chunk_mesh.init();
     }
-}
+
+    pub fn deinit() void {
+        chunk_mesh.deinit();
+    }
+
+    pub fn setViewMatrix(view: nm.Mat4) void {
+        chunk_mesh.setViewMatrix(view);
+    }
+
+    pub fn startDraw() void {
+        chunk_mesh.startDraw();
+    }
+
+    pub fn drawModel(model: *const VolumeModel) void {
+        var meshes = model.meshes.valueIterator();
+        while (meshes.next()) |mesh| {
+            chunk_mesh.bindMesh(mesh.*);
+            chunk_mesh.drawMesh(mesh.*);
+        }
+    }
+};
+
 
 pub const VolumeModel = struct {
 

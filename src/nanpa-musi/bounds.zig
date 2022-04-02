@@ -1,15 +1,14 @@
 const std = @import("std");
 
-const asserts = @import("asserts.zig");
-const vector = @import("vector.zig");
+const nm = @import("_.zig");
 
 pub const Bounds2 = Bounds(f32, 2);
 pub const Bounds3 = Bounds(f32, 3);
 pub const Bounds4 = Bounds(f32, 4);
 
 pub fn Bounds(comptime Scalar_: type, comptime dimensions_: comptime_int) type {
-    comptime asserts.assertFloatOrInt(Scalar_);
-    comptime asserts.assertValidDimensionCount(dimensions_);
+    comptime nm.assertFloatOrInt(Scalar_);
+    comptime nm.assertValidDimensionCount(dimensions_);
 
     return struct {
         center: Vector,
@@ -18,7 +17,7 @@ pub fn Bounds(comptime Scalar_: type, comptime dimensions_: comptime_int) type {
 
         pub const Scalar = Scalar_;
         pub const dimensions = dimensions_;
-        pub const Vector = vector.Vector(Scalar, dimensions);
+        pub const Vector = nm.Vector(Scalar, dimensions);
 
         const Self = @This();
 
@@ -54,8 +53,8 @@ pub const Range3u = Range(u32, 3);
 pub const Range4u = Range(u32, 4);
 
 pub fn Range(comptime Scalar_: type, comptime dimensions_: comptime_int) type {
-    comptime asserts.assertFloatOrInt(Scalar_);
-    comptime asserts.assertValidDimensionCount(dimensions_);
+    comptime nm.assertFloatOrInt(Scalar_);
+    comptime nm.assertValidDimensionCount(dimensions_);
 
     return struct {
 
@@ -64,7 +63,7 @@ pub fn Range(comptime Scalar_: type, comptime dimensions_: comptime_int) type {
 
         pub const Scalar = Scalar_;
         pub const dimensions = dimensions_;
-        pub const Vector = vector.Vector(Scalar, dimensions);
+        pub const Vector = nm.Vector(Scalar, dimensions);
 
         const Self = @This();
 

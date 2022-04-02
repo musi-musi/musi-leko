@@ -1,5 +1,5 @@
 const std = @import("std");
-const asserts = @import("asserts.zig");
+const nm = @import("_.zig");
 
 fn Mixin(comptime Self: type, comptime dimensions_: comptime_int) type {
     return struct {
@@ -11,7 +11,7 @@ fn Mixin(comptime Self: type, comptime dimensions_: comptime_int) type {
 }
 
 pub fn Axis(comptime dimensions: comptime_int) type {
-    comptime asserts.assertValidDimensionCount(dimensions);
+    comptime nm.assertValidDimensionCount(dimensions);
     return switch (dimensions) {
         1 => enum {
             x, y,

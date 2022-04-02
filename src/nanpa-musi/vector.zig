@@ -2,7 +2,6 @@ const std = @import("std");
 
 const nm = @import("_.zig");
 
-const asserts = @import("asserts.zig");
 
 pub const Vec2 = Vector(f32, 2);
 pub const Vec3 = Vector(f32, 3);
@@ -61,8 +60,8 @@ pub fn vec4u(v: Vec4u.Value) Vec4u {
 }
 
 pub fn Vector(comptime Scalar_: type, comptime dimensions_: comptime_int) type {
-    comptime asserts.assertFloatOrInt(Scalar_);
-    comptime asserts.assertValidDimensionCount(dimensions_);
+    comptime nm.assertFloatOrInt(Scalar_);
+    comptime nm.assertValidDimensionCount(dimensions_);
     return extern struct {
         
         v: Value,
@@ -260,7 +259,7 @@ pub fn Vector(comptime Scalar_: type, comptime dimensions_: comptime_int) type {
         /// scalar floor division
         /// only valid for signed integers
         pub fn divFloorScalar(a: Self, b: Scalar) Self {
-            comptime asserts.assertInt(Scalar);
+            comptime nm.assertInt(Scalar);
             var res: Self = undefined;
             inline for (indices) |i| {
                 res.v[i] = @divFloor(a.v[i], b);
@@ -307,7 +306,7 @@ pub fn Vector(comptime Scalar_: type, comptime dimensions_: comptime_int) type {
         }
 
         pub fn lerpTo(self: Self, target: Self, t: Scalar) Self {
-            comptime asserts.assertFloat(Scalar);
+            comptime nm.assertFloat(Scalar);
             var res: Self = undefined;
             inline for (indices) |i| {
                 res.v[i] = nm.lerp(Scalar, self.v[i], target.v[i], t);

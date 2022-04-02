@@ -3,10 +3,10 @@ const nm = @import("nm");
 
 const window = @import("window");
 const session = @import("session");
-const render = @import("render");
+const rendering = @import("rendering");
 const gui = @import("gui");
 
-const session_renderer = render.session_renderer;
+const session_renderer = rendering.session_renderer;
 
 pub fn main() !void {
 

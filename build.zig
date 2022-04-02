@@ -135,9 +135,9 @@ fn addPkgs(step: *std.build.LibExeObjStep) void {
         .path = FileSource.relative("src/session/_.zig"),
         .dependencies = &[_]Pkg{ nm, window, leko, input, util, gui },
     };
-    const render = Pkg {
-        .name = "render",
-        .path = FileSource.relative("src/render/_.zig"),
+    const rendering = Pkg {
+        .name = "rendering",
+        .path = FileSource.relative("src/rendering/_.zig"),
         .dependencies = &[_]Pkg{ nm, gl, window, leko, session, util, gui },
     };
     step.addPackage(c);
@@ -149,5 +149,5 @@ fn addPkgs(step: *std.build.LibExeObjStep) void {
     step.addPackage(gui);
     step.addPackage(leko);
     step.addPackage(session);
-    step.addPackage(render);
+    step.addPackage(rendering);
 }

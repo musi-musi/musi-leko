@@ -1,6 +1,6 @@
 const std = @import("std");
-const c = @import("c");
-
+const gl = @import("_.zig");
+const c = gl.c;
 pub const ProgramError = error {
     CompilationFailed,
     LinkingFailed,
