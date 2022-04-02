@@ -1,7 +1,8 @@
 const std = @import("std");
+
+const nm = @import("_.zig");
+
 const asserts = @import("asserts.zig");
-const axis = @import("axis.zig");
-const cardinal = @import("cardinal.zig");
 
 pub const Vec2 = Vector(f32, 2);
 pub const Vec3 = Vector(f32, 3);
@@ -70,8 +71,8 @@ pub fn Vector(comptime Scalar_: type, comptime dimensions_: comptime_int) type {
         pub const Scalar = Scalar_;
         pub const dimensions = dimensions_;
 
-        pub const Axis = axis.Axis(dimensions);
-        pub const Cardinal = cardinal.Cardinal(dimensions);
+        pub const Axis = nm.Axis(dimensions);
+        pub const Cardinal = nm.Cardinal(dimensions);
 
         pub const axes = Axis.values;
         pub const indices = ([4]u32{0, 1, 2, 3})[0..dimensions];
@@ -303,6 +304,15 @@ pub fn Vector(comptime Scalar_: type, comptime dimensions_: comptime_int) type {
         /// normalized
         pub fn norm(self: Self) Self {
             return self.divScalar(self.mag());
+        }
+
+        pub fn lerpTo(self: Self, target: Self, t: Scalar) Self {
+            comptime asserts.assertFloat(Scalar);
+            var res: Self = undefined;
+            inline for (indices) |i| {
+                res.v[i] = nm.lerp(Scalar, self.v[i], target.v[i], t);
+            }
+            return res;
         }
 
         /// cross product

@@ -13,3 +13,10 @@ pub usingnamespace bounds;
 pub usingnamespace @import("transform.zig");
 
 pub const noise = @import("noise/_.zig");
+
+const asserts = @import("asserts.zig");
+
+pub fn lerp(comptime T: type, a: T, b: T, t: T) T {
+    comptime asserts.assertFloat(T);
+    return a + ((b - a) * t);
+}
