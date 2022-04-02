@@ -13,7 +13,10 @@ const Mat4 = nm.Mat4;
 const Bounds3 = nm.Bounds3;
 const Axis3 = nm.Axis3;
 
+const sm = std.math;
+
 const gravity: f32 = 40;
+
 
 pub const Player = struct {
 
@@ -97,18 +100,27 @@ pub const Player = struct {
             move_xz = move_xz.mulScalar(self.move_speed * delta);
             self.moveXZ(volume, move_xz);
         }
-        if (self.eye_height_step_offset < 0) {
-            self.eye_height_step_offset += (
-                self.move_speed * delta * std.math.max(1, -self.eye_height_step_offset)
-            );
-            if (self.eye_height_step_offset > 0) {
-                self.eye_height_step_offset = 0;
+        var offset = self.eye_height_step_offset;
+        if (offset != 0) {
+            const offset_move = self.move_speed * delta * sm.max(1, sm.absFloat(offset));
+            if (offset > 0) {
+                offset -= offset_move;
+                if (offset < 0) {
+                    offset = 0;
+                }
             }
+            else {
+                offset += offset_move;
+                if (offset > 0) {
+                    offset = 0;
+                }                
+            }
+            self.eye_height_step_offset = offset;
         }
     }
 
     fn jumpVelocity(self: Self) f32 {
-        return std.math.sqrt(2 * gravity * self.jump_height);
+        return sm.sqrt(2 * gravity * self.jump_height);
     }
 
     fn moveXZ(self: *Self, volume: *leko.Volume, move_xz: Vec3) void {
@@ -119,12 +131,21 @@ pub const Player = struct {
                     const move_step = moveBoundsXZ(volume, &step_bounds, move_xz);
                     if (
                         move_step == null 
-                        or std.math.absFloat(move_step.?.get(.x)) > std.math.absFloat(move_ground.get(.x))
-                        or std.math.absFloat(move_step.?.get(.z)) > std.math.absFloat(move_ground.get(.z))
+                        or sm.absFloat(move_step.?.get(.x)) > sm.absFloat(move_ground.get(.x))
+                        or sm.absFloat(move_step.?.get(.z)) > sm.absFloat(move_ground.get(.z))
                     ) {
                         self.eye_height_step_offset += self.bounds.center.get(.y) - step_bounds.center.get(.y);
                         self.bounds.center = step_bounds.center;
                     }
+                }
+            }
+        }
+        if (self.is_grounded) {
+            step_bounds = self.bounds;
+            if (leko.moveBoundsAxis(volume, &step_bounds, -2, .y)) |move_down| {
+                if (move_down > -1.1) {
+                    self.eye_height_step_offset += self.bounds.center.get(.y) - step_bounds.center.get(.y);
+                    self.bounds.center = step_bounds.center;
                 }
             }
         }
