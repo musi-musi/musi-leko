@@ -52,10 +52,12 @@ pub const exports = struct {
                 c.glfwSetWindowMonitor(_handle, monitor, 0, 0, video_mode.width, video_mode.height, video_mode.refreshRate);
             },
         }
+        setVsyncMode(_vsync_mode);
         _display_mode = mode;
     }
 
     pub fn setVsyncMode(mode: VsyncMode) void {
+        _vsync_mode = mode;
         c.glfwSwapInterval(@enumToInt(mode));
     }
 

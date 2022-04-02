@@ -40,7 +40,6 @@ pub fn main() !void {
                     .windowed => .borderless,
                     .borderless => .windowed,
                 });
-                window.setVsyncMode(.enabled);
             }
             try session.update();
         

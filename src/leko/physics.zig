@@ -82,7 +82,7 @@ pub fn checkSolidInRangeMove(volume: *Volume, range: Range3i, comptime move: Car
 /// if no collision occurs, `null` is returned
 /// if collision occurs, return the actual distance moved
 pub fn moveBoundsAxis(volume: *Volume, bounds: *Bounds3, move: f32, comptime axis: Axis3) ?f32 {
-    const skin_width: f32 = 1e-4;
+    const skin_width: f32 = 1e-3;
     const sign: nm.Sign = if (move < 0) .negative else .positive;
     const incr = sign.scalar(f32);
     const direction_pos = comptime Cardinal3.init(axis, .positive);
