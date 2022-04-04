@@ -3,7 +3,9 @@ const std = @import("std");
 const Pkg = std.build.Pkg;
 const FileSource = std.build.FileSource;
 
-pub fn build(b: *std.build.Builder) void {
+const Allocator = std.mem.Allocator;
+
+pub fn build(b: *std.build.Builder) !void {
     // Standard target options allows the person running `zig build` to choose
     // what target to build for. Here we do not override the defaults, which
     // means any target is allowed, and the default is native. Other options
@@ -14,51 +16,49 @@ pub fn build(b: *std.build.Builder) void {
     // between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall.
     const mode = b.standardReleaseOptions();
 
-    b.installBinFile("deps/glfw3.dll", "glfw3.dll");
+    b.installBinFile("musileko/c/glfw3.dll", "glfw3.dll");
 
 
-    const exe = b.addExecutable("musileko", "src/main.zig");
+    const exe = b.addExecutable("musileko", "musileko/_.zig");
 
     exe.setTarget(target);
     exe.setBuildMode(mode);
 
-    addPkgs(exe);
-
-    exe.addLibPath("deps");
+    exe.addLibPath("musileko/c");
     exe.linkSystemLibrary("glfw3");
     
-    const c_flags = .{ "-std=c99", "-I./deps/"};
+    const c_flags = .{ "-std=c99", "-I./musileko/c/"};
 
-    exe.addIncludeDir("deps/");
-    exe.addIncludeDir("deps/glad/include");
-    exe.addCSourceFile("deps/glad/src/glad.c", &c_flags);
-    exe.addCSourceFile("deps/stb_image.c", &c_flags);
+    exe.addIncludeDir("musileko/c/");
+    exe.addIncludeDir("musileko/c/glad/include");
+    exe.addCSourceFile("musileko/c/glad/src/glad.c", &c_flags);
+    exe.addCSourceFile("musileko/c/stb_image.c", &c_flags);
 
 
     const flags: []const []const u8 = &.{
         "-std=c++11",
-        "-I./deps",
-        "-I./deps/glad/include",
-        "-I./deps/cimgui",
-        "-I./deps/cimgui/imgui",
-        "-I./deps/imgui_impl",
+        "-I./musileko/c",
+        "-I./musileko/c/glad/include",
+        "-I./musileko/c/cimgui",
+        "-I./musileko/c/cimgui/imgui",
+        "-I./musileko/c/imgui_impl",
     };
 
 
-    exe.addCSourceFile("deps/imgui_impl.cpp", flags);
+    exe.addCSourceFile("musileko/c/imgui_impl.cpp", flags);
 
-    exe.addIncludeDir("deps/cimgui");
-    exe.addIncludeDir("deps/cimgui/imgui");
-    exe.addCSourceFile("deps/cimgui/cimgui.cpp", flags);
-    exe.addCSourceFile("deps/cimgui/imgui/imgui.cpp", flags);
-    exe.addCSourceFile("deps/cimgui/imgui/imgui_draw.cpp", flags);
-    exe.addCSourceFile("deps/cimgui/imgui/imgui_demo.cpp", flags);
-    exe.addCSourceFile("deps/cimgui/imgui/imgui_tables.cpp", flags);
-    exe.addCSourceFile("deps/cimgui/imgui/imgui_widgets.cpp", flags);
+    exe.addIncludeDir("musileko/c/cimgui");
+    exe.addIncludeDir("musileko/c/cimgui/imgui");
+    exe.addCSourceFile("musileko/c/cimgui/cimgui.cpp", flags);
+    exe.addCSourceFile("musileko/c/cimgui/imgui/imgui.cpp", flags);
+    exe.addCSourceFile("musileko/c/cimgui/imgui/imgui_draw.cpp", flags);
+    exe.addCSourceFile("musileko/c/cimgui/imgui/imgui_demo.cpp", flags);
+    exe.addCSourceFile("musileko/c/cimgui/imgui/imgui_tables.cpp", flags);
+    exe.addCSourceFile("musileko/c/cimgui/imgui/imgui_widgets.cpp", flags);
 
-    exe.addIncludeDir("deps/imgui_impl");
-    exe.addCSourceFile("deps/imgui_impl/imgui_impl_glfw.cpp", flags);
-    exe.addCSourceFile("deps/imgui_impl/imgui_impl_opengl3.cpp", flags);
+    exe.addIncludeDir("musileko/c/imgui_impl");
+    exe.addCSourceFile("musileko/c/imgui_impl/imgui_impl_glfw.cpp", flags);
+    exe.addCSourceFile("musileko/c/imgui_impl/imgui_impl_opengl3.cpp", flags);
 
     // switch (target.getOs().tag) {
     //     .windows => {
@@ -76,6 +76,11 @@ pub fn build(b: *std.build.Builder) void {
     exe.linkLibC();
     exe.install();
 
+    var generate_imports = try GenerateImportsStep.init(b, "musileko");
+    exe.step.dependOn(&generate_imports.step);
+    var clean_imports = try CleanImportsStep.init(b, "musileko");
+    exe.step.dependOn(&clean_imports.step);
+
     const run_cmd = exe.run();
     run_cmd.step.dependOn(b.getInstallStep());
     if (b.args) |args| {
@@ -85,69 +90,143 @@ pub fn build(b: *std.build.Builder) void {
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
 
-    const exe_tests = b.addTest("src/main.zig");
+    const exe_tests = b.addTest("srmusileko/c/main.zig");
     exe_tests.setBuildMode(mode);
 
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&exe_tests.step);
+
+    const generate_imports_step = b.step("imports", "generate imports");
+    generate_imports_step.dependOn(&generate_imports.step);
+    const clean_imports_step = b.step("clean_imports", "clean imports");
+    clean_imports_step.dependOn(&clean_imports.step);
 }
 
-fn addPkgs(step: *std.build.LibExeObjStep) void {
-    const c = Pkg {
-        .name = "c",
-        .path = FileSource.relative("src/c.zig"),
-    };
-    const nm = Pkg {
-        .name = "nm",
-        .path = FileSource.relative("src/nanpa-musi/_.zig"),
-    };
-    const util = Pkg {
-        .name = "util",
-        .path = FileSource.relative("src/util/_.zig"),
-    };
-    const gl = Pkg {
-        .name = "gl",
-        .path = FileSource.relative("src/gl/_.zig"),
-        .dependencies = &[_]Pkg{ c },
-    };
-    const window = Pkg {
-        .name = "window",
-        .path = FileSource.relative("src/window/_.zig"),
-        .dependencies = &[_]Pkg{ c, gl, nm, util },
-    };
-    const input = Pkg {
-        .name = "input",
-        .path = FileSource.relative("src/input/_.zig"),
-        .dependencies = &[_]Pkg{ nm, window },
-    };
-    const gui = Pkg {
-        .name = "gui",
-        .path = FileSource.relative("src/gui/_.zig"),
-        .dependencies = &[_]Pkg{ c, gl, nm, util, window, input },
-    };
-    const leko = Pkg {
-        .name = "leko",
-        .path = FileSource.relative("src/leko/_.zig"),
-        .dependencies = &[_]Pkg{ nm, util },
-    };
-    const session = Pkg {
-        .name = "session",
-        .path = FileSource.relative("src/session/_.zig"),
-        .dependencies = &[_]Pkg{ nm, window, leko, input, util, gui },
-    };
-    const rendering = Pkg {
-        .name = "rendering",
-        .path = FileSource.relative("src/rendering/_.zig"),
-        .dependencies = &[_]Pkg{ nm, gl, window, leko, session, util, gui },
-    };
-    step.addPackage(c);
-    step.addPackage(nm);
-    step.addPackage(util);
-    step.addPackage(gl);
-    step.addPackage(window);
-    step.addPackage(input);
-    step.addPackage(gui);
-    step.addPackage(leko);
-    step.addPackage(session);
-    step.addPackage(rendering);
-}
+const fs = std.fs;
+
+
+const Step = std.build.Step;
+const Builder = std.build.Builder;
+
+const GenerateImportsStep = struct {
+    step: Step,
+    builder: *Builder,
+    root_path: []const u8,
+
+    const Self = @This();
+
+    pub fn init(builder: *Builder, root_path: []const u8) !*Self {
+        const self = try builder.allocator.create(Self);
+        self.* = Self {
+            .builder = builder,
+            .step = Step.init(.custom, builder.fmt("generate imports {s}", .{root_path}), builder.allocator, make),
+            .root_path = root_path,
+        };
+        return self;
+    }
+
+    fn make(step: *Step) anyerror!void {
+        const self = @fieldParentPtr(Self, "step", step);
+        var root = try fs.cwd().openDir(self.root_path, .{ .iterate = true });
+        defer root.close();
+        try self.generateImports(root);
+    }
+
+    fn generateImports(self: Self, dir: fs.Dir) anyerror!void {
+        _ = self;
+        if (try hasZigFiles(dir)) {
+            var imports_file = try dir.createFile(".zig", .{});
+            defer imports_file.close();
+            const writer = imports_file.writer();
+            try writer.writeAll("// generated imports file\n");
+            var children = dir.iterate();
+            while (try children.next()) |child| {
+                if (child.name[0] != '.') {
+                    if (child.kind == .Directory) {
+                        var child_dir = try dir.openDir(child.name, .{ .iterate = true });
+                        defer child_dir.close();
+                        if (try hasZigFiles(child_dir)) {
+                            try writer.print("pub const @\"{s}\" =  @import(\"{s}/.zig\");\n", .{child.name, child.name});
+                            try self.generateImports(child_dir);
+                        }
+                    }
+                }
+            }
+            try writer.writeAll("\n");
+            children = dir.iterate();
+            while (try children.next()) |child| {
+                if (child.name[0] != '.') {
+                    switch (child.kind) {
+                        .File => {
+                            if (std.mem.endsWith(u8, child.name, ".zig") and !std.mem.eql(u8, child.name, "_.zig")) {
+                                try writer.print("pub usingnamespace @import(\"{s}\");\n", .{child.name});
+                            }
+                        },
+                        else => {},
+                    }
+                }
+            }
+        }
+    }
+
+    fn hasZigFiles(dir: fs.Dir) anyerror!bool    {
+        var children = dir.iterate();
+        while (try children.next()) |child| {
+            switch (child.kind) {
+                .File => {
+                    if (std.mem.endsWith(u8, child.name, ".zig")) {
+                        return true;
+                    }
+                },
+                .Directory => {
+                    var child_dir = try dir.openDir(child.name, .{ .iterate = true });
+                    defer child_dir.close();
+                    if (try hasZigFiles(child_dir)) {
+                        return true;
+                    }
+                },
+                else => {},
+            }
+        }
+        return false;
+    }
+
+};
+
+const CleanImportsStep = struct {
+    step: Step,
+    builder: *Builder,
+    root_path: []const u8,
+
+    const Self = @This();
+
+    pub fn init(builder: *Builder, root_path: []const u8) !*Self {
+        const self = try builder.allocator.create(Self);
+        self.* = Self {
+            .builder = builder,
+            .step = Step.init(.custom, builder.fmt("generate imports {s}", .{root_path}), builder.allocator, make),
+            .root_path = root_path,
+        };
+        return self;
+    }
+
+    fn make(step: *Step) anyerror!void {
+        const self = @fieldParentPtr(Self, "step", step);
+        var root = try fs.cwd().openDir(self.root_path, .{ .iterate = true });
+        defer root.close();
+        try self.cleanImports(root);
+    }
+
+    fn cleanImports(self: Self, dir: fs.Dir) anyerror!void {
+        dir.deleteFile(".zig") catch {};
+        var children = dir.iterate();
+        while (try children.next()) |child| {
+            if (child.kind == .Directory) {
+                var child_dir = try dir.openDir(child.name, .{ .iterate = true, });
+                defer child_dir.close();
+                try self.cleanImports(child_dir);
+            }
+        }
+    }
+
+};
