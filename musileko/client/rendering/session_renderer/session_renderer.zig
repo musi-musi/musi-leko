@@ -1,13 +1,13 @@
 const std = @import("std");
 
-const client = @import("../../_.zig");
+const client = @import("../../.zig");
 const gl = client.gl;
 
-const engine = @import("../../../engine/_.zig");
+const engine = @import("../../../engine/.zig");
 const leko = engine.leko;
 const session = engine.session;
 
-const rendering = @import("../_.zig");
+const rendering = @import("../.zig");
 
 const leko_renderer = rendering.leko_renderer;
 

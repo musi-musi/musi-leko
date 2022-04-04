@@ -1,7 +1,7 @@
 const std = @import("std");
 const math = std.math;
 
-const nm = @import("_.zig");
+const nm = @import(".zig");
 
 fn transformGeneric(comptime Scalar: type) type {
     comptime nm.assertFloat(Scalar);

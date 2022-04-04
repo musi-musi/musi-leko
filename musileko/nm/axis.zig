@@ -1,5 +1,5 @@
 const std = @import("std");
-const nm = @import("_.zig");
+const nm = @import(".zig");
 
 fn Mixin(comptime Self: type, comptime dimensions_: comptime_int) type {
     return struct {

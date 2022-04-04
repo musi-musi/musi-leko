@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const nm = @import("_.zig");
+const nm = @import(".zig");
 
 
 pub const Vec2 = Vector(f32, 2);

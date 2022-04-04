@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const nm = @import("_.zig");
+const nm = @import(".zig");
 
 pub const Bounds2 = Bounds(f32, 2);
 pub const Bounds3 = Bounds(f32, 3);

@@ -1,5 +1,5 @@
 const std = @import("std");
-const nm = @import("_.zig");
+const nm = @import(".zig");
 
 pub const Cardinal2 = Cardinal(2);
 pub const Cardinal3 = Cardinal(3);

@@ -1,4 +1,4 @@
-const nm = @import("_.zig");
+const nm = @import(".zig");
 
 pub fn lerp(comptime T: type, a: T, b: T, t: T) T {
     comptime nm.assertFloat(T);

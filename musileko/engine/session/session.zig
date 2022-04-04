@@ -1,16 +1,16 @@
 const std = @import("std");
 
-const engine = @import("../_.zig");
+const engine = @import("../.zig");
 
 const nm = engine.nm;
 const leko = engine.leko;
 
-const client = @import("../../client/_.zig");
+const client = @import("../../client/.zig");
 const window = client.window;
 const input = client.input;
 const gui = client.gui;
 
-const session = @import("_.zig");
+const session = @import(".zig");
 
 const Player = session.Player;
 const config = session.config;

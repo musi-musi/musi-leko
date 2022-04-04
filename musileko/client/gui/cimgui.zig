@@ -1,7 +1,7 @@
 const std = @import("std");
 
-const gui = @import("_.zig");
-const client = @import("../_.zig");
+const gui = @import(".zig");
+const client = @import("../.zig");
 const c = client.c;
 
 const window = client.window;

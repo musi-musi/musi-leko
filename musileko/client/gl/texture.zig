@@ -1,6 +1,6 @@
 const std = @import("std");
-const gl = @import("_.zig");
-const client = @import("../_.zig");
+const gl = @import(".zig");
+const client = @import("../.zig");
 const c = client.c;
 
 pub fn TextureRgba8(comptime target_: TextureTarget) type {

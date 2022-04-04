@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const util = @import("_.zig");
+const util = @import(".zig");
 
 const Thread = std.Thread;
 const Allocator = std.mem.Allocator;

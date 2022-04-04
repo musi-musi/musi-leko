@@ -1,7 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
-const util = @import("_.zig");
+const util = @import(".zig");
 
 const os = std.os;
 const mem = std.mem;

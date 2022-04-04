@@ -1,9 +1,9 @@
 const std = @import("std");
-const engine = @import("../_.zig");
+const engine = @import("../.zig");
 const nm = engine.nm;
 const util = engine.util;
 
-const leko = @import("_.zig");
+const leko = @import(".zig");
 
 const Volume = leko.Volume;
 const Chunk = leko.Chunk;

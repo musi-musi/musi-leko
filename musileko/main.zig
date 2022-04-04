@@ -1,2 +1,2 @@
-const musileko = @import("_.zig");
+const musileko = @import(".zig");
 pub const main = musileko.client.main;

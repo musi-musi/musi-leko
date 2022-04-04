@@ -1,9 +1,9 @@
 const std = @import("std");
 
-const debug = @import("_.zig");
-const rendering = @import("../_.zig");
+const debug = @import(".zig");
+const rendering = @import("../.zig");
 
-const client = @import("../../_.zig");
+const client = @import("../../.zig");
 const gl = client.gl;
 const nm = client.nm;
 

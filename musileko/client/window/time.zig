@@ -1,5 +1,5 @@
 const std = @import("std");
-const client = @import("../_.zig");
+const client = @import("../.zig");
 const c = client.c;
 
 var _previous_time: f64 = 0;

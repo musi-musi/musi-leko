@@ -1,11 +1,11 @@
 const std = @import("std");
 
-const client = @import("../_.zig");
+const client = @import("../.zig");
 
 const nm = client.nm;
 const window = client.window;
 
-const input = @import("_.zig");
+const input = @import(".zig");
 
 const InputHandle = input.InputHandle;
 

@@ -1,15 +1,15 @@
 const std = @import("std");
 
 
-const leko_renderer = @import("_.zig");
+const leko_renderer = @import(".zig");
 const chunk_mesh = leko_renderer.chunk_mesh;
 
-const rendering = @import("../_.zig");
+const rendering = @import("../.zig");
 
-const engine = @import("../../../engine/_.zig");
+const engine = @import("../../../engine/.zig");
 const leko = engine.leko;
 
-const client = @import("../../_.zig");
+const client = @import("../../.zig");
 
 const nm = client.nm;
 const util = client.util;

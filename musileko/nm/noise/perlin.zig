@@ -1,6 +1,6 @@
 const std = @import("std");
-const noise = @import("_.zig");
-const nm = @import("../_.zig");
+const noise = @import(".zig");
+const nm = @import("../.zig");
 
 pub fn Perlin1(comptime wrap: ?usize) type { return Perlin(f32, 1, wrap); }
 pub fn Perlin2(comptime wrap: ?usize) type { return Perlin(f32, 2, wrap); }

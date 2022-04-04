@@ -1,8 +1,8 @@
 const std = @import("std");
-const engine = @import("../_.zig");
+const engine = @import("../.zig");
 const nm = engine.nm;
 
-const leko = @import("_.zig");
+const leko = @import(".zig");
 
 const config = leko.config;
 const Address = leko.Address;

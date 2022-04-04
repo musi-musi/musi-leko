@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const client = @import("../_.zig");
+const client = @import("../.zig");
 const gl = client.gl;
 
 

@@ -1,5 +1,5 @@
 const std = @import("std");
-const engine = @import("../_.zig");
+const engine = @import("../.zig");
 const util = engine.util;
 
 pub const config = struct {

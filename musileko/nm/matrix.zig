@@ -1,5 +1,5 @@
 const std = @import("std");
-const nm = @import("_.zig");
+const nm = @import(".zig");
 
 pub fn Matrix(comptime Scalar_: type, comptime rows_: comptime_int, comptime cols_: comptime_int) type {
     comptime nm.assertFloat(Scalar_);

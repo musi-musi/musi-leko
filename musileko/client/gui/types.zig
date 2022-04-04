@@ -1,8 +1,8 @@
 const std = @import("std");
-const client = @import("../_.zig");
+const client = @import("../.zig");
 const c = client.c;
 const nm = client.nm;
-const gui = @import("_.zig");
+const gui = @import(".zig");
 
 const Vec2 = nm.Vec2;
 const Vec4 = nm.Vec4;

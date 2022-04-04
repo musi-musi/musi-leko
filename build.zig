@@ -19,7 +19,7 @@ pub fn build(b: *std.build.Builder) !void {
     b.installBinFile("musileko/c/glfw3.dll", "glfw3.dll");
 
 
-    const exe = b.addExecutable("musileko", "musileko/_.zig");
+    const exe = b.addExecutable("musileko", "musileko/.zig");
 
     exe.setTarget(target);
     exe.setBuildMode(mode);
@@ -79,7 +79,6 @@ pub fn build(b: *std.build.Builder) !void {
     var generate_imports = try GenerateImportsStep.init(b, "musileko");
     exe.step.dependOn(&generate_imports.step);
     var clean_imports = try CleanImportsStep.init(b, "musileko");
-    exe.step.dependOn(&clean_imports.step);
 
     const run_cmd = exe.run();
     run_cmd.step.dependOn(b.getInstallStep());

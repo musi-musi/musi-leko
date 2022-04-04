@@ -1,7 +1,7 @@
 const std = @import("std");
-const client = @import("../_.zig");
+const client = @import("../.zig");
 const c = client.c;
-const window = @import("_.zig");
+const window = @import(".zig");
 
 var states: [2]State = .{.{}, .{}};
 var curr_state: u32 = 0;

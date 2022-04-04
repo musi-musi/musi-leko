@@ -1,9 +1,9 @@
 const std = @import("std");
-const client = @import("../_.zig");
+const client = @import("../.zig");
 const c = client.c;
 const nm = client.nm;
 
-const window = @import("_.zig");
+const window = @import(".zig");
 
 const Vec2 = nm.Vec2;
 

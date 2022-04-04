@@ -1,7 +1,7 @@
 const std = @import("std");
 
-const client = @import("_.zig");
-const musileko = @import("../_.zig");
+const client = @import(".zig");
+const musileko = @import("../.zig");
 
 const nm = musileko.nm;
 
@@ -17,7 +17,7 @@ pub fn main() !void {
     try window.init(.{});
     defer window.deinit();
     
-    window.setVsyncMode(.enabled);
+    window.setVsyncMode(.disabled);
 
     try gui.init();
     defer gui.deinit();

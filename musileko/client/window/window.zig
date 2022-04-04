@@ -1,7 +1,7 @@
-const client = @import("../_.zig");
+const client = @import("../.zig");
 const c = client.c;
 const gl = client.gl;
-const window = @import("_.zig");
+const window = @import(".zig");
 
 pub const Handle = *c.GLFWwindow;
 
