@@ -38,6 +38,10 @@ pub const volume_model = struct {
         chunk_mesh.setViewMatrix(view);
     }
 
+    pub fn setProjectionMatrix(proj: nm.Mat4) void {
+        chunk_mesh.setProjectionMatrix(proj);
+    }
+
     pub fn startDraw() void {
         chunk_mesh.startDraw();
     }

@@ -119,9 +119,11 @@ pub const chunk_mesh = struct {
         _shader.uniforms.set("view", view.v);
     }
 
-    pub fn startDraw() void {
-        var proj = projectionMatrix();
+    pub fn setProjectionMatrix(proj: nm.Mat4) void {
         _shader.uniforms.set("proj", proj.v);
+    }
+
+    pub fn startDraw() void {
         _shader.uniforms.set("time", @floatCast(f32, window.currentTime()));
         _array.bind();
         _shader.use();
@@ -138,14 +140,6 @@ pub const chunk_mesh = struct {
         if (mesh.quad_count > 0 and mesh.has_uploaded) {
             gl.drawElementsInstanced(.triangles, 6, .uint, mesh.quad_count);
         }
-    }
-
-    fn projectionMatrix() nm.Mat4 {
-        const width = window.width();
-        const height = window.height();
-        const fov_rad: f32 = std.math.pi / 180.0 * 90.0;
-        const aspect = @intToFloat(f32, width) / @intToFloat(f32, height);
-        return nm.transform.createPerspective(fov_rad, aspect, 0.01, 1000);
     }
 };
 

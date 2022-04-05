@@ -47,6 +47,9 @@ pub const Player = struct {
     next_position: Vec3 = undefined,
     position: Vec3 = Vec3.zero,
 
+    select_range: f32 = 8,
+    select_reference: ?leko.RaycastHit = null,
+
     const Self = @This();
 
     pub fn init(self: *Self) void {
@@ -63,9 +66,17 @@ pub const Player = struct {
             self.noclip_enabled = !self.noclip_enabled;
         }
         self.mouse_look.update();
-            
-        
+        const look_matrix = self.mouse_look.viewMatrix();
+        const look_direction = look_matrix.transformDirection(Vec3.unit(.z));
+        self.select_reference = leko.raycast(
+            session.volume(), 
+            self.eyePosition(),
+            look_direction,
+            self.select_range,
+        );
+
         self.position = self.prev_position.lerpTo(self.next_position, session.tickLerp());
+
     }
 
     pub fn tick(self: *Self) void {
@@ -196,9 +207,13 @@ pub const Player = struct {
         }
     }
 
+    pub fn eyePosition(self: Self) Vec3 {
+        return self.position.add(Vec3.init(.{0, self.eye_height, 0}));
+    }
+
     pub fn viewMatrix(self: Self) Mat4 {
         return nm.transform.createTranslate(
-            self.position.add(Vec3.init(.{0, self.eye_height, 0})).neg()
+            self.eyePosition().neg()
             // self.position.add(Vec3.init(.{0, self.eye_height + self.eye_height_step_offset, 0})).neg()
         ).mul(self.mouse_look.viewMatrix());
     }

@@ -84,3 +84,7 @@ pub fn volume() *leko.Volume {
 pub fn volumeManager() *leko.VolumeManager {
     return &_volume_manager;
 }
+
+pub fn player() Player {
+    return _player;
+}

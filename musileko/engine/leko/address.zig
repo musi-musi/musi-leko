@@ -106,64 +106,74 @@ pub const Address = struct {
 
 };
 
-pub const Reference = struct {
-        
-    chunk: *Chunk,
-    address: Address,
+pub const Reference = ReferenceImpl(*Chunk);
+pub const ConstReference = ReferenceImpl(*const Chunk);
 
-    const Self = @This();
+fn ReferenceImpl(comptime ChunkPtr: type) type {
+    return struct {
+            
+        chunk: ChunkPtr,
+        address: Address,
 
-    pub fn init(chunk: *Chunk, address: Address) Self {
-        return .{
-            .chunk = chunk,
-            .address = address,
-        };
-    }
+        const Self = @This();
 
-    pub fn initGlobalPosition(volume: *Volume, position: Vec3i) ?Self {
-        const chunk_position = position.divFloorScalar(Chunk.width);
-        if (volume.chunks.get(chunk_position)) |chunk| {
-            const local_position = position.sub(chunk_position.mulScalar(Chunk.width));
-            return init(chunk, Address.init(i32, local_position.v));
+        pub fn init(chunk: ChunkPtr, address: Address) Self {
+            return .{
+                .chunk = chunk,
+                .address = address,
+            };
         }
-        else {
-            return null;
-        }
-    }
 
-    pub fn incrUnchecked(self: Self, comptime direction: Cardinal3) Self {
-        return init(self.chunk, self.address.incrUnchecked(direction));
-    }
-
-    pub fn decrUnchecked(self: Self, comptime direction: Cardinal3) Self {
-        return init(self.chunk, self.address.decrUnchecked(direction));
-    }
-
-    pub fn incr(self: Self, comptime direction: Cardinal3) ?Self {
-        var result = self;
-        const pos = direction;
-        const neg = comptime direction.neg();
-        if (result.address.isEdge(pos)) {
-            if (result.chunk.neighbor(pos)) |neighbor| {
-                result.chunk = neighbor;
-                result.address = result.address.toEdge(neg);
+        pub fn initGlobalPosition(volume: *Volume, position: Vec3i) ?Self {
+            const chunk_position = position.divFloorScalar(Chunk.width);
+            if (volume.chunks.get(chunk_position)) |chunk| {
+                const local_position = position.sub(chunk_position.mulScalar(Chunk.width));
+                return init(chunk, Address.init(i32, local_position.v));
             }
             else {
                 return null;
             }
         }
-        else {
-            result.address = result.address.incrUnchecked(pos);
+
+        pub fn toConst(self: Self) ConstReference {
+            return ConstReference.ini(self.chunk, self.address);
         }
-        return result;
-    }
 
-    pub fn decr(self: Self, comptime direction: Cardinal3) ?Self {
-        return self.incr(comptime direction.neg());
-    }
+        pub fn incrUnchecked(self: Self, comptime direction: Cardinal3) Self {
+            return init(self.chunk, self.address.incrUnchecked(direction));
+        }
 
-    pub fn globalPosition(self: Self) Vec3i {
-        return self.chunk.position.mulScalar(Chunk.width).add(self.address.localPosition());
-    }
+        pub fn decrUnchecked(self: Self, comptime direction: Cardinal3) Self {
+            return init(self.chunk, self.address.decrUnchecked(direction));
+        }
 
-};
+        pub fn incr(self: Self, comptime direction: Cardinal3) ?Self {
+            var result = self;
+            const pos = direction;
+            const neg = comptime direction.neg();
+            if (result.address.isEdge(pos)) {
+                if (result.chunk.neighbor(pos)) |neighbor| {
+                    result.chunk = neighbor;
+                    result.address = result.address.toEdge(neg);
+                }
+                else {
+                    return null;
+                }
+            }
+            else {
+                result.address = result.address.incrUnchecked(pos);
+            }
+            return result;
+        }
+
+        pub fn decr(self: Self, comptime direction: Cardinal3) ?Self {
+            return self.incr(comptime direction.neg());
+        }
+
+        pub fn globalPosition(self: Self) Vec3i {
+            return self.chunk.position.mulScalar(Chunk.width).add(self.address.localPosition());
+        }
+
+    };
+
+}

@@ -85,16 +85,16 @@ pub fn Vector(comptime Scalar_: type, comptime dimensions_: comptime_int) type {
             return .{ .v = v};
         }
 
-        pub fn get(self: Self, comptime a: Axis) Scalar {
+        pub fn get(self: Self, a: Axis) Scalar {
             return self.v[@enumToInt(a)];
         }
-        pub fn set(self: *Self, comptime a: Axis, v: Scalar) void {
+        pub fn set(self: *Self, a: Axis, v: Scalar) void {
             self.v[@enumToInt(a)] = v;
         }
-        pub fn ptr(self: *const Self, comptime a: Axis) *const Scalar {
+        pub fn ptr(self: *const Self, a: Axis) *const Scalar {
             return &(self.v[@enumToInt(a)]);
         }
-        pub fn ptrMut(self: *Self, comptime a: Axis) *Scalar {
+        pub fn ptrMut(self: *Self, a: Axis) *Scalar {
             return &(self.v[@enumToInt(a)]);
         }
 
@@ -164,6 +164,41 @@ pub fn Vector(comptime Scalar_: type, comptime dimensions_: comptime_int) type {
                     .negative => unit(c.axis()).neg(),
                 };
             }
+        }
+
+        pub const Component = struct {
+            value: Scalar,
+            axis: Axis,
+        };
+
+        pub fn minComponent(self: Self) Component {
+            var component = Component {
+                .value = self.v[0],
+                .axis = Axis.x,
+            };
+            inline for (comptime std.enums.values(Axis)[1..]) |axis| {
+                const v = self.get(axis);
+                if (v < component.value) {
+                    component.value = v;
+                    component.axis = axis;
+                }
+            }
+            return component;
+        }
+
+        pub fn maxComponent(self: Self) Component {
+            var component = Component {
+                .value = self.v[0],
+                .axis = Axis.x,
+            };
+            inline for (comptime std.enums.values(Axis)[1..]) |axis| {
+                const v = self.get(axis);
+                if (v > component.value) {
+                    component.value = v;
+                    component.axis = axis;
+                }
+            }
+            return component;
         }
 
         pub fn eql(a: Self, b: Self) bool {

@@ -85,6 +85,15 @@ fn Mixin(comptime Self: type, comptime dimensions_: comptime_int) type {
 pub const Sign = enum(u1) {
     positive, negative,
 
+    pub fn ofScalar(comptime T: type, value: T) Sign {
+        if (value > 0) {
+            return .positive;
+        }
+        else {
+            return .negative;
+        }
+    }
+
     pub fn scalar(sign: Sign, comptime T: type) T {
         return switch (sign) {
             .positive => 1,

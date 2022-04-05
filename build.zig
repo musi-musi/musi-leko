@@ -145,7 +145,7 @@ const GenerateImportsStep = struct {
                         var child_dir = try dir.openDir(child.name, .{ .iterate = true });
                         defer child_dir.close();
                         if (try hasZigFiles(child_dir)) {
-                            try writer.print("pub const @\"{s}\" =  @import(\"{s}/.zig\");\n", .{child.name, child.name});
+                            try writer.print("pub const {s} =  @import(\"{s}/.zig\");\n", .{child.name, child.name});
                             try self.generateImports(child_dir);
                         }
                     }

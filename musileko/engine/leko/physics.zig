@@ -127,3 +127,78 @@ pub fn moveBoundsAxis(volume: *Volume, bounds: *Bounds3, move: f32, comptime axi
     bounds.center.ptrMut(axis).* += move;
     return null;
 }
+
+
+pub const RaycastHit = struct {
+    normal: ?Cardinal3,
+    reference: Reference,
+};
+
+pub fn raycast(volume: *Volume, origin: Vec3, direction: Vec3, range: f32) ?RaycastHit {
+    const position = origin.floor().cast(i32);
+    if (Reference.initGlobalPosition(volume, position)) |reference| {
+        if (collisionState(reference) == .solid) {
+            return RaycastHit {
+                .normal = null,
+                .reference = reference,
+            };
+        }
+        else {
+            var ref = reference;
+            const dir = direction.norm();
+            const dx2 = dir.v[0] * dir.v[0];
+            const dy2 = dir.v[1] * dir.v[1];
+            const dz2 = dir.v[2] * dir.v[2];
+            const t_delta = Vec3.init(.{
+                m.sqrt(1 + (dy2 + dz2) / dx2),
+                m.sqrt(1 + (dx2 + dz2) / dy2),
+                m.sqrt(1 + (dx2 + dy2) / dz2),
+            });
+            const origin_floor = origin.floor();
+            var t_max = Vec3.init(.{
+                (if (dir.v[0] > 0) (origin_floor.v[0] + 1 - origin.v[0]) else origin.v[0] - origin_floor.v[0]) * t_delta.v[0],
+                (if (dir.v[1] > 0) (origin_floor.v[1] + 1 - origin.v[1]) else origin.v[1] - origin_floor.v[1]) * t_delta.v[1],
+                (if (dir.v[2] > 0) (origin_floor.v[2] + 1 - origin.v[2]) else origin.v[2] - origin_floor.v[2]) * t_delta.v[2],
+            });
+            if (dir.v[0] == 0) t_max.v[0] = m.inf(f32);
+            if (dir.v[1] == 0) t_max.v[1] = m.inf(f32);
+            if (dir.v[2] == 0) t_max.v[2] = m.inf(f32);
+            var distance: f32 = 0;
+            while (distance < range) {
+                const min = t_max.minComponent();
+                const axis = min.axis;
+                const sign = nm.Sign.ofScalar(f32, dir.get(axis));
+                const cardinal = Cardinal3.init(axis, sign);
+                const next_ref_opt = switch (cardinal) {
+                    .x_pos => ref.incr(.x_pos),
+                    .x_neg => ref.incr(.x_neg),
+                    .y_pos => ref.incr(.y_pos),
+                    .y_neg => ref.incr(.y_neg),
+                    .z_pos => ref.incr(.z_pos),
+                    .z_neg => ref.incr(.z_neg),
+                };
+                if (next_ref_opt) |next_ref| {
+                    ref = next_ref;
+                    t_max.ptrMut(axis).* += t_delta.get(axis);
+                    distance = (
+                        @intToFloat(f32, ref.globalPosition().get(axis)) - origin.get(axis)
+                        + (1 - sign.scalar(f32)) / 2
+                    ) / dir.get(axis);
+                    if (collisionState(ref) == .solid) {
+                        return RaycastHit {
+                            .normal = cardinal.neg(),
+                            .reference = ref,
+                        };
+                    }
+                }
+                else {
+                    return null;
+                }
+            }
+            return null;
+        }
+    }
+    else {
+        return null;
+    }
+}
