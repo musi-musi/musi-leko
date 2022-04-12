@@ -30,7 +30,7 @@ pub const Player = struct {
         .radius = Vec3.init(.{0.8, 1.8, 0.8}),
     },
     
-    eye_height: f32 = 1.2,
+    eye_height: f32 = 1.5,
     eye_height_step_offset: f32 = 0,
     move_speed: f32 = 15,
     jump_height: f32 = 2.2,
@@ -60,7 +60,7 @@ pub const Player = struct {
         self.next_position = self.position;
     }
 
-    pub fn update(self: *Self) void {
+    pub fn update(self: *Self) !void {
         // const delta = @floatCast(f32, window.frameTime());
         if (self.input_handle.keyWasPressed(.z)) {
             self.noclip_enabled = !self.noclip_enabled;
@@ -76,6 +76,19 @@ pub const Player = struct {
         );
 
         self.position = self.prev_position.lerpTo(self.next_position, session.tickLerp());
+
+        if (self.select_reference) |select_reference| {
+            if (self.input_handle.keyWasPressed(.mouse_1)) {
+                try session.volumeManager().requestSingleEdit(select_reference.reference, 0);
+            }
+            if (select_reference.normal) |normal| {
+                if (self.input_handle.keyWasPressed(.mouse_2)) {
+                    if (select_reference.reference.incr(normal)) |reference| {
+                        try session.volumeManager().requestSingleEdit(reference, 1);
+                    }
+                }
+            }
+        }
 
     }
 

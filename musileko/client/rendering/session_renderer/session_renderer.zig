@@ -33,6 +33,7 @@ pub fn init(allocator: Allocator) !void {
     try _model_manager.init(allocator, &_model);
     volume_manager.event_chunk_loaded.addListener(&_model_manager.listener_chunk_loaded);
     volume_manager.event_chunk_unloaded.addListener(&_model_manager.listener_chunk_unloaded);
+    volume_manager.event_leko_edit.addListener(&_model_manager.listener_leko_edit);
     try selection_cube.init();
 }
 

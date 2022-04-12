@@ -30,7 +30,7 @@ pub fn Perlin(comptime Scalar_: type, comptime dimensions_: u32, comptime wrap_:
         const gradient_table = blk: {
             @setEvalBranchQuota(100000);
             var result: [548]Vector = undefined;
-            var rng = std.rand.DefaultPrng.init(0);
+            var rng = std.rand.DefaultPrng.init(0x42342984);
             const r = rng.random();
             var v = 0;
             while (v < result.len) : (v += 1) {

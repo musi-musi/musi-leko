@@ -64,6 +64,7 @@ pub fn Range(comptime Scalar_: type, comptime dimensions_: comptime_int) type {
         pub const Scalar = Scalar_;
         pub const dimensions = dimensions_;
         pub const Vector = nm.Vector(Scalar, dimensions);
+        pub const Axis = nm.Axis(dimensions);
 
         const Self = @This();
 
@@ -72,6 +73,25 @@ pub fn Range(comptime Scalar_: type, comptime dimensions_: comptime_int) type {
                 .min = Vector.init(min),
                 .max = Vector.init(max),
             };
+        }
+
+        pub fn contains(self: Self, v: Vector) bool {
+            inline for (comptime std.enums.values(Axis)) |a| {
+                switch (@typeInfo(Scalar)) {
+                    .Int => {
+                        if (v.get(a) < self.min.get(a) or v.get(a) >= self.max.get(a)) {
+                            return false;
+                        }
+                    },
+                    .Float => {
+                        if (v.get(a) < self.min.get(a) or v.get(a) > self.max.get(a)) {
+                            return false;
+                        }
+                    },
+                    else => unreachable,
+                }
+            }
+            return true;
         }
 
     };  

@@ -73,6 +73,10 @@ pub fn showStats() void {
         const frame_time = @floatCast(f32, window.frameTime());
         gui.text(64, "fps:   {d: >8.3}", .{1 / frame_time});
         gui.text(64, "delta: {d: >8.6}", .{frame_time});
+        const player = @import("../../engine/.zig").session.player();
+        gui.text(64, "x:     {d: >8.2}", .{player.position.v[0]});
+        gui.text(64, "y:     {d: >8.2}", .{player.position.v[1]});
+        gui.text(64, "z:     {d: >8.2}", .{player.position.v[2]});
     }
 }
 

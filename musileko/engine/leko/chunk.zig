@@ -48,7 +48,7 @@ pub const Chunk = struct {
         self.state = .inactive;
     }
 
-    pub fn neighbor(self: Self, comptime direction: Cardinal3) ?*Self {
+    pub fn neighbor(self: Self, direction: Cardinal3) ?*Self {
         return self.neighbors[@enumToInt(direction)];
     }
 
@@ -66,6 +66,18 @@ pub fn LekoArray(comptime Element_: type) type{
 
         pub fn get(self: Self, address: Address) Element {
             return self.items[address.v];
+        }
+
+        pub fn ptr(self: *const Self, address: Address) *const Element {
+            return &self.items[address.v];
+        }
+
+        pub fn ptrMut(self: *Self, address: Address) *Element {
+            return &self.items[address.v];
+        }
+
+        pub fn set(self: *Self, address: Address, value: Element) void {
+            self.items[address.v] = value;
         }
 
     };

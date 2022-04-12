@@ -10,6 +10,8 @@ const Chunk = leko.Chunk;
 const Address = leko.Address;
 const Reference = leko.Reference;
 
+const LekoId = leko.LekoId;
+
 const config = leko.config.volume_manager;
 
 const Vec3 = nm.Vec3;
@@ -18,6 +20,16 @@ const Vec3i = nm.Vec3i;
 const Allocator = std.mem.Allocator;
 
 pub const ChunkEvent = util.Event(*Chunk);
+
+
+pub const LekoEdit = struct {
+    reference: Reference,
+    new_id: LekoId,
+    old_id: LekoId,
+};
+
+pub const LekoEditEvent = util.Event(LekoEdit);
+
 
 pub const VolumeManager = struct {
 
@@ -37,9 +49,11 @@ pub const VolumeManager = struct {
     event_chunk_loaded: ChunkEvent = .{},
     event_chunk_unloaded: ChunkEvent = .{},
 
+    edit_thread: LekoEditThread = undefined,
+    event_leko_edit: LekoEditEvent = .{},
+
     load_queue: ChunkLoadQueue = undefined,
     load_thread: ChunkLoadThread = undefined,
-
 
     const ChunkLoad = struct {
         chunk_position: Vec3i,
@@ -51,6 +65,9 @@ pub const VolumeManager = struct {
 
     const ChunkLoadQueue = util.AtomicQueue(ChunkLoad);
     const ChunkLoadThread = util.ThreadGroup(Vec3i);
+
+    // const LekoEditQueue = util.AtomicQueue(LekoEdit);
+    const LekoEditThread = util.ThreadGroup(LekoEdit);
 
     const Self = @This();
 
@@ -66,6 +83,8 @@ pub const VolumeManager = struct {
         try self.load_thread_group.spawn(.{});
         try self.load_thread.init(allocator, .{ .thread_count = .{ .count = 1, }}, processLoadCenterChanged);
         try self.load_thread.spawn(.{});
+        try self.edit_thread.init(allocator, .{ .thread_count = .{ .count = 1, }}, processLekoEdit);
+        try self.edit_thread.spawn(.{});
     }
 
     pub fn deinit(self: *Self) void {
@@ -76,6 +95,8 @@ pub const VolumeManager = struct {
         self.load_thread.deinit(self.allocator);
         self.load_queue.deinit();
         self.chunk_positions.deinit(self.allocator);
+        self.edit_thread.join();
+        self.edit_thread.deinit(self.allocator);
     }
 
     pub fn update(self: *Self, load_center: Vec3) !void {
@@ -113,7 +134,7 @@ pub const VolumeManager = struct {
     }
 
     fn processLoadCenterChanged(thread: *ChunkLoadThread, new_center: Vec3i, _:usize) !void {
-        const self = @fieldParentPtr(Self,"load_thread", thread);
+        const self = @fieldParentPtr(Self, "load_thread", thread);
         self.load_center = new_center;
         const load_min = new_center.sub(Vec3i.fill(@intCast(i32, self.load_radius)));
         const load_max = new_center.add(Vec3i.fill(@intCast(i32, self.load_radius)));
@@ -167,7 +188,7 @@ pub const VolumeManager = struct {
 
         const octaves: u32 = 4;
         const lacunarity: f32 = 2;
-        const gain: f32 = 0.35;
+        const gain: f32 = 0.45;
         for (chunk.id_array.items) |*id, i| {
             const reference = Reference.init(chunk, Address.initI(i));
             var pos = reference.globalPosition().cast(f32);
@@ -191,6 +212,22 @@ pub const VolumeManager = struct {
         }
         chunk.state = .active;
         try self.loaded_chunk_queue.enqueue(chunk);
+    }
+
+    pub fn requestSingleEdit(self: *Self, reference: Reference, new_id: LekoId) !void {
+        const old_id = reference.chunk.id_array.get(reference.address);
+        const edit = LekoEdit {
+            .reference = reference,
+            .old_id = old_id,
+            .new_id = new_id,
+        };
+        try self.edit_thread.submitItem(edit);
+    }
+
+    fn processLekoEdit(thread: *LekoEditThread, edit: LekoEdit, _: usize) !void {
+        const self = @fieldParentPtr(Self, "edit_thread", thread);
+        edit.reference.chunk.id_array.set(edit.reference.address, edit.new_id);
+        try self.event_leko_edit.dispatch(edit);
     }
 
 };

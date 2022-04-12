@@ -55,7 +55,7 @@ pub fn update() !void {
         _player.input_handle.is_active = !_player.input_handle.is_active;
         gui.input_handle.is_active = !_player.input_handle.is_active;
     }
-    _player.update();
+    try _player.update();
     const delta = @floatCast(f32, window.frameTime());
     _time_since_last_tick += delta;
     const tick_duration = config.tickDuration();
