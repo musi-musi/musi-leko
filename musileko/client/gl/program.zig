@@ -312,7 +312,6 @@ pub const UniformType = struct {
         mat2,
         mat3,
         mat4,
-
     };
 
 };

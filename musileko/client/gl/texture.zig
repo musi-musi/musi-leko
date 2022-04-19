@@ -39,8 +39,8 @@ pub fn Texture(comptime target_: TextureTarget, comptime format_: PixelFormat) t
         }
 
         pub fn setFilter(self: Self, min_filter: TextureFilter, mag_filter: TextureFilter) void {
-            c.glTextureParameteri(self.handle, c.GL_TEXTURE_MIN_FILTER, @enumToInt(min_filter));
-            c.glTextureParameteri(self.handle, c.GL_TEXTURE_MAG_FILTER, @enumToInt(mag_filter));
+            c.glTextureParameteri(self.handle, c.GL_TEXTURE_MIN_FILTER, @intCast(c_int, @enumToInt(min_filter)));
+            c.glTextureParameteri(self.handle, c.GL_TEXTURE_MAG_FILTER, @intCast(c_int, @enumToInt(mag_filter)));
         }
 
         pub usingnamespace switch (target) {
@@ -61,6 +61,17 @@ pub fn Texture(comptime target_: TextureTarget, comptime format_: PixelFormat) t
                     const channels = @enumToInt(format.channels);
                     const component = @enumToInt(format.component);
                     c.glTextureSubImage2D(self.handle, mip, x, y, w, h, channels, component, @ptrCast(*const anyopaque, data.ptr));
+                }
+
+                /// allocate for framebuffer usage
+                pub fn allocFramebuffer(self: Self, width: usize, height: usize) void {
+                    // const w = @intCast(c_int, width);
+                    // const h = @intCast(c_int, height);
+                    // const mip: c_int = 0;
+                    // const channels = @enumToInt(format.channels);
+                    // const component = @enumToInt(format.component);
+                    // c.glTextureImage2D(self.handle, mip, comptime format.sizedFormat(), w, h, 0, channels, component, null);
+                    self.alloc(width, height);
                 }
 
             },
@@ -84,6 +95,7 @@ pub fn Texture(comptime target_: TextureTarget, comptime format_: PixelFormat) t
                     const component = @enumToInt(format.component);
                     c.glTextureSubImage2D(self.handle, mip, x, y, i, w, h, 1, channels, component, @ptrCast(*const anyopaque, data.ptr));
                 }
+
 
             },
         };
@@ -113,7 +125,7 @@ pub const TextureTarget = enum(c_uint) {
 
 };
 
-pub const TextureFilter = enum(c_int) {
+pub const TextureFilter = enum(c_uint) {
     nearest = c.GL_NEAREST,
     linear = c.GL_LINEAR,
 };
@@ -136,6 +148,8 @@ pub const PixelFormat = struct {
                 .signed_byte => @as(c_uint, c.GL_R8_SNORM),
                 .short => @as(c_uint, c.GL_R16),
                 .signed_short => @as(c_uint, c.GL_R16_SNORM),
+                .int => @as(c_uint, c.GL_R32),
+                .signed_int => @as(c_uint, c.GL_R32_SNORM),
                 .float => @as(c_uint, c.GL_R32F),
             },
             .rg => switch (self.component) {
@@ -143,14 +157,17 @@ pub const PixelFormat = struct {
                 .signed_byte => @as(c_uint, c.GL_RG8_SNORM),
                 .short => @as(c_uint, c.GL_RG16),
                 .signed_short => @as(c_uint, c.GL_RG16_SNORM),
+                .int => @as(c_uint, c.GL_RG32),
+                .signed_int => @as(c_uint, c.GL_RG32_SNORM),
                 .float => @as(c_uint, c.GL_RG32F),
             },
             .rgb => switch (self.component) {
                 .byte => @as(c_uint, c.GL_RGB8),
                 .signed_byte => @as(c_uint, c.GL_RGB8_SNORM),
-                // .short => @as(c_uint, c.GL_RGB16),
                 .short => @compileError("no 16 bit unsigned rgb format"),
                 .signed_short => @as(c_uint, c.GL_RGB16_SNORM),
+                .int => @as(c_uint, c.GL_RGB32),
+                .signed_int => @as(c_uint, c.GL_RGB32_SNORM),
                 .float => @as(c_uint, c.GL_RGB32F),
             },
             .rgba => switch (self.component) {
@@ -158,7 +175,15 @@ pub const PixelFormat = struct {
                 .signed_byte => @as(c_uint, c.GL_RGBA8_SNORM),
                 .short => @as(c_uint, c.GL_RGBA16),
                 .signed_short => @as(c_uint, c.GL_RGBA16_SNORM),
+                .int => @as(c_uint, c.GL_RGBA32),
+                .signed_int => @as(c_uint, c.GL_RGBA32_SNORM),
                 .float => @as(c_uint, c.GL_RGBA32F),
+            },
+            .depth => switch (self.component) {
+                .short => @as(c_uint, c.GL_DEPTH_COMPONENT16),
+                .int => @as(c_uint, c.GL_DEPTH_COMPONENT32),
+                .float => @as(c_uint, c.GL_DEPTH_COMPONENT32F),
+                else => @compileError("unsupported depth format"),
             },
         };
     }
@@ -170,6 +195,7 @@ pub const PixelChannels = enum(c_uint) {
     rg = c.GL_RG,
     rgb = c.GL_RGB,
     rgba = c.GL_RGBA,
+    depth = c.GL_DEPTH_COMPONENT,
 
     const Self = @This();
 
@@ -189,6 +215,7 @@ pub const PixelChannels = enum(c_uint) {
             .rg => 2,
             .rgb => 3,
             .rgba => 4,
+            .depth => 1,
         };
     }
 
@@ -199,6 +226,8 @@ pub const PixelComponent = enum(c_uint) {
     signed_byte = c.GL_BYTE,
     short = c.GL_UNSIGNED_SHORT,
     signed_short = c.GL_SHORT,
+    int = c.GL_UNSIGNED_INT,
+    signed_int = c.GL_INT,
     float = c.GL_FLOAT,
 
     const Self = @This();
@@ -209,6 +238,8 @@ pub const PixelComponent = enum(c_uint) {
             .signed_byte => i8,
             .short => u16,
             .signed_short => i16,
+            .int => u32,
+            .signed_int => i32,
             .float => f32,
         };
     }

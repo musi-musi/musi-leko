@@ -64,6 +64,9 @@ pub const chunk_mesh = struct {
             gl.uniformTextureUnit("perlin"),
 
             gl.uniform("time", .float),
+
+            gl.uniform("player_selection_position", .vec3i),
+            gl.uniform("player_selection_face", .int),
         },
         @embedFile("chunk_mesh.vert"),
         @embedFile("chunk_mesh.frag"),
@@ -115,12 +118,19 @@ pub const chunk_mesh = struct {
         _perlin_texture.deinit();
     }
 
-    pub fn setViewMatrix(view: nm.Mat4) void {
-        _shader.uniforms.set("view", view.v);
+    pub fn setCamera(camera: rendering.Camera) void {
+        _shader.uniforms.set("view", camera.view.v);
+        _shader.uniforms.set("proj", camera.proj.v);
     }
 
-    pub fn setProjectionMatrix(proj: nm.Mat4) void {
-        _shader.uniforms.set("proj", proj.v);
+    pub fn setPlayerSelection(selection: ?leko.RaycastHit) void {
+        _shader.uniforms.set("player_selection_face", -1);
+        if (selection) |sel| {
+            if (sel.normal) |normal| {
+                _shader.uniforms.set("player_selection_position", sel.reference.globalPosition().v);
+                _shader.uniforms.set("player_selection_face", @intCast(i32, @enumToInt(normal)));
+            }
+        }
     }
 
     pub fn startDraw() void {

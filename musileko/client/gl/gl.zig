@@ -16,3 +16,11 @@ pub fn init() void {
 pub fn viewport(x: c_int, y: c_int, width: c_int, height: c_int) void{
     c.glViewport(x, y, width, height);
 }
+
+pub fn enableDepthTest() void {
+    c.glEnable(c.GL_DEPTH_TEST);
+}
+
+pub fn disableDepthTest() void {
+    c.glDisable(c.GL_DEPTH_TEST);
+}

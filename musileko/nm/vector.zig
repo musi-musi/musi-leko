@@ -273,6 +273,24 @@ pub fn Vector(comptime Scalar_: type, comptime dimensions_: comptime_int) type {
             return res;
         }
 
+        /// scalar addition
+        pub fn addScalar(a: Self, b: Scalar) Self {
+            var res: Self = undefined;
+            inline for (indices) |i| {
+                res.v[i] = a.v[i] + b;
+            }
+            return res;
+        }
+
+        /// scalar subtraction
+        pub fn subScalar(a: Self, b: Scalar) Self {
+            var res: Self = undefined;
+            inline for (indices) |i| {
+                res.v[i] = a.v[i] - b;
+            }
+            return res;
+        }
+
         /// scalar multiplication
         pub fn mulScalar(a: Self, b: Scalar) Self {
             var res: Self = undefined;

@@ -3,8 +3,12 @@ in flat float frag_ao[4];
 in vec2 frag_uv_face;
 in vec2 frag_uv_texture;
 in float frag_fog;
+in flat int frag_outline;
 
-out vec4 FragColor;
+layout (location = 0) out vec4 final_color;
+layout (location = 1) out vec4 outline_color;
+
+uniform vec4 selection_outline_color = vec4(1, 0, 1, 1);
 
 uniform float light_strength = 0.5;
 uniform float ao_strength = 0.25;
@@ -48,6 +52,7 @@ void main() {
     // noise = clamp((noise + 0.35) * 100, -1, 1);
     float color = mix(0.3, 0.35, band(noise, color_bands));
     // float color = (noise + 1) / 2;
-    FragColor.xyz = mix(vec3(color * ao * light), vec3(0), frag_fog);
-    FragColor.w = 1;
+    final_color.xyz = mix(vec3(color * ao * light), vec3(0), frag_fog);
+    final_color.w = 1;
+    outline_color = selection_outline_color * float(frag_outline);
 }

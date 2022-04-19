@@ -33,7 +33,7 @@ const Vertex = struct {
 const VertexBuffer = gl.VertexBuffer(Vertex);
 
 const Array = gl.Array(struct {
-    verts: gl.BufferBind(Vertex, .{})
+    verts: gl.BufferBind(Vertex, .{}),
 }, .uint);
 
 var _shader: Shader = undefined;
@@ -50,8 +50,8 @@ var _index_buffer: Array.IndexBuffer = undefined;
 pub fn init() !void {
     _shader = try Shader.init();
     _array = Array.init();
-    _index_buffer = Array.IndexBuffer.init();
     _vertex_buffer = VertexBuffer.init();
+    _index_buffer = Array.IndexBuffer.init();
 
     @setEvalBranchQuota(1_000_000);
     const verts = comptime
