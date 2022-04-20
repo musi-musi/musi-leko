@@ -12,30 +12,31 @@ pub const GBuffer = struct {
     height: usize,
 
     pub const Framebuffer = gl.Framebuffer(&.{
-        gl.PixelFormat {
+        gl.PixelFormat { // color
+            .channels = .rgba,
+            .component = .byte,
+            .srgb = true,
+        },
+        gl.PixelFormat { // outline
             .channels = .rgba,
             .component = .byte,
         },
-        gl.PixelFormat {
-            .channels = .rgba,
-            .component = .byte,
-        },
-        gl.PixelFormat {
+        gl.PixelFormat { // position
             .channels = .rgba,
             .component = .float,
         },
-        gl.PixelFormat {
+        gl.PixelFormat { // normal
             .channels = .rgb,
             .component = .byte,
         },
-        gl.PixelFormat {
+        gl.PixelFormat { // uv
             .channels = .rg,
             .component = .float,
         },
     }, .float);
 
     pub const Textures = struct {
-        
+
         depth: Depth,
         color: Color,
         outline: Outline,
@@ -110,6 +111,9 @@ pub const GBuffer = struct {
     pub fn clear(self: Self) void {
         self.framebuffer.clearColor(0, .{0, 0, 0, 0});
         self.framebuffer.clearColor(1, .{0, 0, 0, 0});
+        self.framebuffer.clearColor(2, .{0, 0, 0, 0});
+        self.framebuffer.clearColor(3, .{0, 0, 0});
+        self.framebuffer.clearColor(4, .{0, 0});
         self.framebuffer.clearDepth(1);
     }
 

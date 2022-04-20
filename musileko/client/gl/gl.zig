@@ -11,6 +11,7 @@ pub fn init() void {
     c.glDisable(c.GL_MULTISAMPLE);
     // c.glEnable(c.GL_MULTISAMPLE);
     c.glEnable(c.GL_CULL_FACE);
+    c.glEnable(c.GL_FRAMEBUFFER_SRGB);
 }
 
 pub fn viewport(x: c_int, y: c_int, width: c_int, height: c_int) void{

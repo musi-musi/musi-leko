@@ -12,7 +12,7 @@ pub fn TextureRgba8(comptime target_: TextureTarget) type {
 
 pub fn Texture(comptime target_: TextureTarget, comptime format_: PixelFormat) type {
     return struct {
-        
+
         handle: c_uint,
 
         pub const target = target_;
@@ -45,7 +45,7 @@ pub fn Texture(comptime target_: TextureTarget, comptime format_: PixelFormat) t
 
         pub usingnamespace switch (target) {
             .texture_2d => struct {
-                
+
                 pub fn alloc(self: Self, width: usize, height: usize) void {
                     const w = @intCast(c_int, width);
                     const h = @intCast(c_int, height);
@@ -76,7 +76,7 @@ pub fn Texture(comptime target_: TextureTarget, comptime format_: PixelFormat) t
 
             },
             .array_2d => struct {
-                
+
                 pub fn alloc(self: Self, width: usize, height: usize, count: usize) void {
                     const w = @intCast(c_int, width);
                     const h = @intCast(c_int, height);
@@ -134,6 +134,7 @@ pub const PixelFormat = struct {
 
     channels: PixelChannels = .rgba,
     component: PixelComponent = .byte,
+    srgb: bool = false,
 
     const Self = @This();
 
@@ -142,6 +143,19 @@ pub const PixelFormat = struct {
     }
 
     pub fn sizedFormat(comptime self: Self) c_uint {
+        if (self.srgb) {
+            return switch (self.channels) {
+                .rgb => switch (self.component) {
+                    .byte => @as(c_uint, c.GL_SRGB8),
+                    else => @compileError("srgb is only valid for byte bit depth"),
+                },
+                .rgba => switch (self.component) {
+                    .byte => @as(c_uint, c.GL_SRGB8_ALPHA8),
+                    else => @compileError("srgb_alpha is only valid for byte bit depth"),
+                },
+                else => @compileError("srgb is only supported for rgb or rgba"),
+            };
+        }
         return switch (self.channels) {
             .r => switch (self.component) {
                 .byte => @as(c_uint, c.GL_R8),

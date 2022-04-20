@@ -45,8 +45,8 @@ void main() {
         mix(frag_ao[0], frag_ao[1], frag_uv_face.x),
         frag_uv_face.y
     );
-    ao = mix(1, band(ao - 0.1, 4), ao_strength);
-    float light = mix(1, frag_light, light_strength);
+    ao = pow(mix(1, band(ao - 0.1, 4), ao_strength), 2.2); // NOTE: the pow(x, 2.2) is a hack to keep the look the same without tweaking the equations
+    float light = pow(mix(1, frag_light, light_strength), 2.2); // NOTE: the pow(x, 2.2) is a hack to keep the look the same without tweaking the equations
     vec2 anim = vec2(time * animation_speed);
     float v_warp = texture(perlin, frag_uv_texture + vec2(24.354, 56.5463)).x;
     vec2 warp = vec2(0, v_warp) * noise_warp_strength;
@@ -55,7 +55,7 @@ void main() {
     noise = (noise + 1) / 2;
 
     // noise = clamp((noise + 0.35) * 100, -1, 1);
-    float color = mix(0.3, 0.35, band(noise, color_bands));
+    float color = pow(mix(0.3, 0.35, band(noise, color_bands)), 2.2); // NOTE: the pow(x, 2.2) is a hack to keep the look the same without tweaking the equations
     // float color = (noise + 1) / 2;
     g_color.xyz = mix(vec3(color * ao * light), vec3(0), frag_fog);
     g_color.w = 1;

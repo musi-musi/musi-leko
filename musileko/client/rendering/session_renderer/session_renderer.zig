@@ -65,9 +65,9 @@ pub fn render() void {
     {
         _deferred_pass.begin();
         defer _deferred_pass.finish();
-        
+
         const player = session.player();
-        
+
         leko_renderer.chunk_mesh.setCamera(camera);
         leko_renderer.chunk_mesh.setPlayerSelection(player.select_reference);
         volume_model.startDraw();
