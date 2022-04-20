@@ -17,8 +17,11 @@ pub const Pass = struct {
     shader: Shader,
 
     const Shader = rendering.Shader(&.{
-            gl.uniformTextureUnit("buf_color"),
-            gl.uniformTextureUnit("buf_outline"),
+            gl.uniformTextureUnit("g_color"),
+            gl.uniformTextureUnit("g_outline"),
+            gl.uniformTextureUnit("g_position"),
+            gl.uniformTextureUnit("g_normal"),
+            gl.uniformTextureUnit("g_uv"),
             gl.uniform("screen_size", .vec2),
         }, 
         @embedFile("deferred.vert"), 
@@ -63,9 +66,15 @@ pub const Pass = struct {
     pub fn finish(self: Self) void {
         gl.bindDefaultFramebuffer();
         self.buffer.textures.color.bind(2);
-        self.shader.uniforms.set("buf_color", 2);
+        self.shader.uniforms.set("g_color", 2);
         self.buffer.textures.outline.bind(3);
-        self.shader.uniforms.set("buf_outline", 3);
+        self.shader.uniforms.set("g_outline", 3);
+        self.buffer.textures.position.bind(4);
+        self.shader.uniforms.set("g_position", 4);
+        self.buffer.textures.normal.bind(5);
+        self.shader.uniforms.set("g_normal", 5);
+        self.buffer.textures.uv.bind(6);
+        self.shader.uniforms.set("g_uv", 6);
         self.shader.use();
         self.screen_mesh.startDraw();
         self.screen_mesh.draw();

@@ -14,7 +14,8 @@ uniform float fog_end = 3.75;
 uniform ivec3 player_selection_position;
 uniform int player_selection_face;
 
-
+out vec4 frag_position;
+out vec3 frag_normal;
 out float frag_light;
 out flat float frag_ao[4];
 out vec2 frag_uv_face;
@@ -62,4 +63,7 @@ void main() {
     else {
         frag_outline = 0;
     }
+    frag_position = vec4(position, 0);
+    frag_normal = normal;
+
 }

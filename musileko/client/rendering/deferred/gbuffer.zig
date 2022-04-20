@@ -19,7 +19,19 @@ pub const GBuffer = struct {
         gl.PixelFormat {
             .channels = .rgba,
             .component = .byte,
-        }
+        },
+        gl.PixelFormat {
+            .channels = .rgba,
+            .component = .float,
+        },
+        gl.PixelFormat {
+            .channels = .rgb,
+            .component = .byte,
+        },
+        gl.PixelFormat {
+            .channels = .rg,
+            .component = .float,
+        },
     }, .float);
 
     pub const Textures = struct {
@@ -27,21 +39,33 @@ pub const GBuffer = struct {
         depth: Depth,
         color: Color,
         outline: Outline,
+        position: Position,
+        normal: Normal,
+        uv: Uv,
 
+        pub const Depth = Framebuffer.DepthTexture;
         pub const Color = Framebuffer.ColorTexture(0);
         pub const Outline = Framebuffer.ColorTexture(1);
-        pub const Depth = Framebuffer.DepthTexture;
+        pub const Position = Framebuffer.ColorTexture(2);
+        pub const Normal = Framebuffer.ColorTexture(3);
+        pub const Uv = Framebuffer.ColorTexture(4);
 
         pub fn init(self: *Textures) void {
             self.depth = Depth.init();
             self.color = Color.init();
             self.outline = Outline.init();
+            self.position = Position.init();
+            self.normal = Normal.init();
+            self.uv = Uv.init();
         }
 
         pub fn deinit(self: *Textures) void {
             self.depth.deinit();
             self.color.deinit();
             self.outline.deinit();
+            self.position.deinit();
+            self.normal.deinit();
+            self.uv.deinit();
         }
 
 
@@ -55,9 +79,15 @@ pub const GBuffer = struct {
         self.textures.depth.allocFramebuffer(width, height);
         self.textures.color.allocFramebuffer(width, height);
         self.textures.outline.allocFramebuffer(width, height);
+        self.textures.position.allocFramebuffer(width, height);
+        self.textures.normal.allocFramebuffer(width, height);
+        self.textures.uv.allocFramebuffer(width, height);
         self.framebuffer.attachDepth(self.textures.depth);
         self.framebuffer.attachColor(0, self.textures.color);
         self.framebuffer.attachColor(1, self.textures.outline);
+        self.framebuffer.attachColor(2, self.textures.position);
+        self.framebuffer.attachColor(3, self.textures.normal);
+        self.framebuffer.attachColor(4, self.textures.uv);
         self.width = width;
         self.height = height;
 
