@@ -6,7 +6,7 @@ const c = client.c;
 pub fn TextureRgba8(comptime target_: TextureTarget) type {
     return Texture(target_, .{
         .channels = .rgba,
-        .component = .byte,
+        .component = .u8norm,
     });
 }
 
@@ -58,8 +58,8 @@ pub fn Texture(comptime target_: TextureTarget, comptime format_: PixelFormat) t
                     const x: c_int = 0;
                     const y: c_int = 0;
                     const mip: c_int = 0;
-                    const channels = @enumToInt(format.channels);
-                    const component = @enumToInt(format.component);
+                    const channels = format.channels.glType();
+                    const component = format.component.glType();
                     c.glTextureSubImage2D(self.handle, mip, x, y, w, h, channels, component, @ptrCast(*const anyopaque, data.ptr));
                 }
 
@@ -68,8 +68,8 @@ pub fn Texture(comptime target_: TextureTarget, comptime format_: PixelFormat) t
                     // const w = @intCast(c_int, width);
                     // const h = @intCast(c_int, height);
                     // const mip: c_int = 0;
-                    // const channels = @enumToInt(format.channels);
-                    // const component = @enumToInt(format.component);
+                    // const channels = format.channels.glType();
+                    // const component = format.component.glType();
                     // c.glTextureImage2D(self.handle, mip, comptime format.sizedFormat(), w, h, 0, channels, component, null);
                     self.alloc(width, height);
                 }
@@ -91,11 +91,10 @@ pub fn Texture(comptime target_: TextureTarget, comptime format_: PixelFormat) t
                     const x: c_int = 0;
                     const y: c_int = 0;
                     const mip: c_int = 0;
-                    const channels = @enumToInt(format.channels);
-                    const component = @enumToInt(format.component);
+                    const channels = format.channels.glType();
+                    const component = format.component.glType();
                     c.glTextureSubImage2D(self.handle, mip, x, y, i, w, h, 1, channels, component, @ptrCast(*const anyopaque, data.ptr));
                 }
-
 
             },
         };
@@ -131,10 +130,8 @@ pub const TextureFilter = enum(c_uint) {
 };
 
 pub const PixelFormat = struct {
-
     channels: PixelChannels = .rgba,
-    component: PixelComponent = .byte,
-    srgb: bool = false,
+    component: PixelComponent = .u8norm,
 
     const Self = @This();
 
@@ -143,60 +140,71 @@ pub const PixelFormat = struct {
     }
 
     pub fn sizedFormat(comptime self: Self) c_uint {
-        if (self.srgb) {
-            return switch (self.channels) {
-                .rgb => switch (self.component) {
-                    .byte => @as(c_uint, c.GL_SRGB8),
-                    else => @compileError("srgb is only valid for byte bit depth"),
-                },
-                .rgba => switch (self.component) {
-                    .byte => @as(c_uint, c.GL_SRGB8_ALPHA8),
-                    else => @compileError("srgb_alpha is only valid for byte bit depth"),
-                },
-                else => @compileError("srgb is only supported for rgb or rgba"),
-            };
-        }
         return switch (self.channels) {
             .r => switch (self.component) {
-                .byte => @as(c_uint, c.GL_R8),
-                .signed_byte => @as(c_uint, c.GL_R8_SNORM),
-                .short => @as(c_uint, c.GL_R16),
-                .signed_short => @as(c_uint, c.GL_R16_SNORM),
-                .int => @as(c_uint, c.GL_R32),
-                .signed_int => @as(c_uint, c.GL_R32_SNORM),
-                .float => @as(c_uint, c.GL_R32F),
+                .u8norm => @as(c_uint, c.GL_R8),
+                .i8norm => @as(c_uint, c.GL_R8_SNORM),
+                .u8 => @as(c_uint, c.GL_R8UI),
+                .i8 => @as(c_uint, c.GL_R8I),
+                .u16norm => @as(c_uint, c.GL_R16),
+                .i16norm => @as(c_uint, c.GL_R16_SNORM),
+                .u16 => @as(c_uint, c.GL_R16UI),
+                .i16 => @as(c_uint, c.GL_R16I),
+                .u32 => @as(c_uint, c.GL_R32UI),
+                .i32 => @as(c_uint, c.GL_R32I),
+                .f32 => @as(c_uint, c.GL_R32F),
             },
             .rg => switch (self.component) {
-                .byte => @as(c_uint, c.GL_RG8),
-                .signed_byte => @as(c_uint, c.GL_RG8_SNORM),
-                .short => @as(c_uint, c.GL_RG16),
-                .signed_short => @as(c_uint, c.GL_RG16_SNORM),
-                .int => @as(c_uint, c.GL_RG32),
-                .signed_int => @as(c_uint, c.GL_RG32_SNORM),
-                .float => @as(c_uint, c.GL_RG32F),
+                .u8norm => @as(c_uint, c.GL_RG8),
+                .i8norm => @as(c_uint, c.GL_RG8_SNORM),
+                .u8 => @as(c_uint, c.GL_RG8UI),
+                .i8 => @as(c_uint, c.GL_RG8I),
+                .u16norm => @as(c_uint, c.GL_RG16),
+                .i16norm => @as(c_uint, c.GL_RG16_SNORM),
+                .u16 => @as(c_uint, c.GL_RG16UI),
+                .i16 => @as(c_uint, c.GL_RG16I),
+                .u32 => @as(c_uint, c.GL_RG32UI),
+                .i32 => @as(c_uint, c.GL_RG32I),
+                .f32 => @as(c_uint, c.GL_RG32F),
             },
             .rgb => switch (self.component) {
-                .byte => @as(c_uint, c.GL_RGB8),
-                .signed_byte => @as(c_uint, c.GL_RGB8_SNORM),
-                .short => @compileError("no 16 bit unsigned rgb format"),
-                .signed_short => @as(c_uint, c.GL_RGB16_SNORM),
-                .int => @as(c_uint, c.GL_RGB32),
-                .signed_int => @as(c_uint, c.GL_RGB32_SNORM),
-                .float => @as(c_uint, c.GL_RGB32F),
+                .u8norm => @as(c_uint, c.GL_RGB8),
+                .i8norm => @as(c_uint, c.GL_RGB8_SNORM),
+                .u8 => @as(c_uint, c.GL_RGB8UI),
+                .i8 => @as(c_uint, c.GL_RGB8I),
+                .u16norm => @as(c_uint, c.GL_RGB16),
+                .i16norm => @as(c_uint, c.GL_RGB16_SNORM),
+                .u16 => @as(c_uint, c.GL_RGB16UI),
+                .i16 => @as(c_uint, c.GL_RGB16I),
+                .u32 => @as(c_uint, c.GL_RGB32UI),
+                .i32 => @as(c_uint, c.GL_RGB32I),
+                .f32 => @as(c_uint, c.GL_RGB32F),
+            },
+            .srgb => switch (self.component) {
+                .u8norm => @as(c_uint, c.GL_SRGB8),
+                else => @compileError("srgb is only valid for byte bit depth"),
             },
             .rgba => switch (self.component) {
-                .byte => @as(c_uint, c.GL_RGBA8),
-                .signed_byte => @as(c_uint, c.GL_RGBA8_SNORM),
-                .short => @as(c_uint, c.GL_RGBA16),
-                .signed_short => @as(c_uint, c.GL_RGBA16_SNORM),
-                .int => @as(c_uint, c.GL_RGBA32),
-                .signed_int => @as(c_uint, c.GL_RGBA32_SNORM),
-                .float => @as(c_uint, c.GL_RGBA32F),
+                .u8norm => @as(c_uint, c.GL_RGBA8),
+                .i8norm => @as(c_uint, c.GL_RGBA8_SNORM),
+                .u8 => @as(c_uint, c.GL_RGBA8UI),
+                .i8 => @as(c_uint, c.GL_RGBA8I),
+                .u16norm => @as(c_uint, c.GL_RGBA16),
+                .i16norm => @as(c_uint, c.GL_RGBA16_SNORM),
+                .u16 => @as(c_uint, c.GL_RGBA16UI),
+                .i16 => @as(c_uint, c.GL_RGBA16I),
+                .u32 => @as(c_uint, c.GL_RGBA32UI),
+                .i32 => @as(c_uint, c.GL_RGBA32I),
+                .f32 => @as(c_uint, c.GL_RGBA32F),
+            },
+            .srgb_alpha => switch (self.component) {
+                .u8norm => @as(c_uint, c.GL_SRGB8_ALPHA8),
+                else => @compileError("srgb_alpha is only valid for byte bit depth"),
             },
             .depth => switch (self.component) {
-                .short => @as(c_uint, c.GL_DEPTH_COMPONENT16),
-                .int => @as(c_uint, c.GL_DEPTH_COMPONENT32),
-                .float => @as(c_uint, c.GL_DEPTH_COMPONENT32F),
+                .u16 => @as(c_uint, c.GL_DEPTH_COMPONENT16),
+                .u32 => @as(c_uint, c.GL_DEPTH_COMPONENT32),
+                .f32 => @as(c_uint, c.GL_DEPTH_COMPONENT32F),
                 else => @compileError("unsupported depth format"),
             },
         };
@@ -205,21 +213,33 @@ pub const PixelFormat = struct {
 };
 
 pub const PixelChannels = enum(c_uint) {
-    r = c.GL_RED,
-    rg = c.GL_RG,
-    rgb = c.GL_RGB,
-    rgba = c.GL_RGBA,
-    depth = c.GL_DEPTH_COMPONENT,
+    r,
+    rg,
+    rgb,
+    srgb,
+    rgba,
+    srgb_alpha,
+    depth,
 
     const Self = @This();
 
-    pub fn fromDimensions(dims: u32) Self {
-        return switch (dims) {
-            1 => .r,
-            2 => .rg,
-            3 => .rgb,
-            4 => .rgba,
-            else => .rgba,
+    pub fn fromDimensions(dims: u32, srgb: bool) Self {
+        return if (!srgb) {
+            switch (dims) {
+                1 => .r,
+                2 => .rg,
+                3 => .rgb,
+                4 => .rgba,
+                else => .rgba,
+            }
+        } else {
+            switch (dims) {
+                1 => @compileError("srgb is not supported for channel count 1"),
+                2 => @compileError("srgb is not supported for channel count 2"),
+                3 => .srgb,
+                4 => .srgb_alpha,
+                else => .srgb_alpha,
+            }
         };
     }
 
@@ -228,33 +248,72 @@ pub const PixelChannels = enum(c_uint) {
             .r => 1,
             .rg => 2,
             .rgb => 3,
+            .srgb => 3,
             .rgba => 4,
+            .srgb_alpha => 4,
             .depth => 1,
+        };
+    }
+
+    pub fn glType(comptime self: Self) c_uint {
+        return switch(self) {
+            .r => c.GL_RED,
+            .rg => c.GL_RG,
+            .rgb => c.GL_RGB,
+            .srgb => c.GL_RGB,
+            .rgba => c.GL_RGBA,
+            .srgb_alpha => c.GL_RGBA,
+            .depth => c.GL_DEPTH_COMPONENT,
         };
     }
 
 };
 
 pub const PixelComponent = enum(c_uint) {
-    byte = c.GL_UNSIGNED_BYTE,
-    signed_byte = c.GL_BYTE,
-    short = c.GL_UNSIGNED_SHORT,
-    signed_short = c.GL_SHORT,
-    int = c.GL_UNSIGNED_INT,
-    signed_int = c.GL_INT,
-    float = c.GL_FLOAT,
+    u8norm,
+    i8norm,
+    u8,
+    i8,
+    u16norm,
+    i16norm,
+    u16,
+    i16,
+    u32,
+    i32,
+    f32,
 
     const Self = @This();
 
     pub fn Type(comptime self: Self) type {
         return switch(self) {
-            .byte => u8,
-            .signed_byte => i8,
-            .short => u16,
-            .signed_short => i16,
-            .int => u32,
-            .signed_int => i32,
-            .float => f32,
+            .u8norm => u8,
+            .i8norm => i8,
+            .u8 => u8,
+            .i8 => i8,
+            .u16norm => u16,
+            .i16norm => i16,
+            .u16 => u16,
+            .i16 => i16,
+            .u32 => u32,
+            .i32 => i32,
+            .f32 => f32,
         };
     }
+
+    pub fn glType(comptime self: Self) c_uint {
+        return switch(self) {
+            .u8norm => c.GL_UNSIGNED_BYTE,
+            .i8norm => c.GL_BYTE,
+            .u8 => c.GL_UNSIGNED_BYTE,
+            .i8 => c.GL_BYTE,
+            .u16norm => c.GL_UNSIGNED_SHORT,
+            .i16norm => c.GL_SHORT,
+            .u16 => c.GL_UNSIGNED_SHORT,
+            .i16 => c.GL_SHORT,
+            .u32 => c.GL_UNSIGNED_INT,
+            .i32 => c.GL_INT,
+            .f32 => c.GL_FLOAT,
+        };
+    }
+
 };

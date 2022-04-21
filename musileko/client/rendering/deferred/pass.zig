@@ -23,8 +23,8 @@ pub const Pass = struct {
             gl.uniformTextureUnit("g_normal"),
             gl.uniformTextureUnit("g_uv"),
             gl.uniform("screen_size", .vec2),
-        }, 
-        @embedFile("deferred.vert"), 
+        },
+        @embedFile("deferred.vert"),
         @embedFile("deferred.frag"),
         &.{},
     );
@@ -78,7 +78,7 @@ pub const Pass = struct {
         self.shader.use();
         self.screen_mesh.startDraw();
         self.screen_mesh.draw();
-        self.buffer.blitDepth(0);
+        //self.buffer.blitDepth(0); // produces GL_INVALID_OPERATION because the default depth buffer is not f32
         gl.bindDefaultFramebuffer();
     }
 

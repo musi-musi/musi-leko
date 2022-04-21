@@ -85,9 +85,9 @@ pub fn Framebuffer(comptime color_formats_: []const PixelFormat, comptime depth_
                 else => c.GL_COLOR,
             };
             const element_type = switch (format.component) {
-                .byte, .short, .int => c_uint,
-                .signed_byte, .signed_short, .signed_int => c_int,
-                .float => f32,
+                .u8norm, .u8, .u16norm, .u16, .u32 => c_uint,
+                .i8norm, .i8, .i16norm, .i16, .i32 => c_int,
+                .f32 => f32,
             };
             var a = std.mem.zeroes([array_len]element_type);
             for (value) |v, i| {
@@ -107,7 +107,7 @@ pub fn Framebuffer(comptime color_formats_: []const PixelFormat, comptime depth_
         }
 
         pub fn blit(
-            self: Self, target_handle: c_uint, 
+            self: Self, target_handle: c_uint,
             src_pos: [2]c_int, src_size: [2]c_int,
             des_pos: [2]c_int, des_size: [2]c_int,
             mask: FramebufferBlitMask,

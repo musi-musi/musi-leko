@@ -30,7 +30,7 @@ pub const chunk_mesh = struct {
 
     const Texture = gl.Texture(.texture_2d, .{
         .channels = .rg,
-        .component = .float,
+        .component = .f32,
     });
 
     /// ```
@@ -59,7 +59,7 @@ pub const chunk_mesh = struct {
             gl.uniform("view", .mat4),
 
             gl.uniform("chunk_position", .vec3i),
-            
+
             gl.uniform("light", .vec3),
             gl.uniformTextureUnit("perlin"),
 
@@ -103,7 +103,7 @@ pub const chunk_mesh = struct {
                 // data[x][y][0] = perlin.sample(.{u, v});
             }
         }
-        
+
         _perlin_texture.alloc(size, size);
         _perlin_texture.upload(size, size, @ptrCast(*[size * size][2]f32, &data));
         _shader.uniforms.set("perlin", 1);
@@ -219,7 +219,7 @@ pub const ChunkMesh = struct {
             self.data.base_border.items.len
         );
         if (self.quad_count > 0) {
-            self.base_buffer.alloc(self.quad_count, .static_draw);
+            self.base_buffer.alloc(self.quad_count, .dynamic_draw);
             if (self.data.base_middle.items.len > 0) {
                 self.base_buffer.subData(self.data.base_middle.items, 0);
             }
@@ -252,7 +252,7 @@ pub const MeshData = struct {
             .base_border = .{},
         };
     }
-        
+
     pub fn deinit(self: *Self, allocator: Allocator) void {
         self.base_middle.deinit(allocator);
         self.base_border.deinit(allocator);
@@ -289,7 +289,7 @@ pub const MeshData = struct {
     pub fn generateBorder(self: *Self, allocator: Allocator, chunk: *Chunk) !void {
         self.base_border.shrinkRetainingCapacity(0);
         const max = Chunk.width - 1;
-        
+
         inline for (.{0, max}) |x| {
             for (range) |y| {
                 for (range) |z| {
@@ -310,7 +310,7 @@ pub const MeshData = struct {
                 }
             }
         }
-        
+
     }
 
     const range = blk: {
@@ -327,7 +327,7 @@ pub const MeshData = struct {
         });
     }
 
-    fn appendBorderLekoBase(self: *Self, allocator: Allocator, chunk: *Chunk, x: u32, y: u32, z: u32) !void{ 
+    fn appendBorderLekoBase(self: *Self, allocator: Allocator, chunk: *Chunk, x: u32, y: u32, z: u32) !void{
         var reference = Reference.init(chunk, Address.init(u32, .{x, y, z}));
         if (opacity(reference) == .solid) {
             inline for (comptime std.enums.values(Cardinal3)) |normal| {
@@ -357,7 +357,7 @@ pub const MeshData = struct {
 
             u: u32 = start,
             v: u32 = start,
-            
+
             const end = Chunk.width - start;
 
             const card_u = cardU(normal);
@@ -440,7 +440,7 @@ pub const MeshData = struct {
             .border => reference.incr(normal) orelse return 0,
         };
 
-        
+
 
         const Move = struct {
             sign: enum { incr, decr },
@@ -514,7 +514,7 @@ pub const MeshData = struct {
         break :blk table;
     };
 
-    
+
 
     fn createShaderHeader() [:0]const u8 {
         const Header = struct {
@@ -529,8 +529,8 @@ pub const MeshData = struct {
                     }
                     const normal = Vec3.unitSigned(card_n).v;
                     try w.print("vec3({d}, {d}, {d})", .{
-                        @floatToInt(i32, normal[0]), 
-                        @floatToInt(i32, normal[1]), 
+                        @floatToInt(i32, normal[0]),
+                        @floatToInt(i32, normal[1]),
                         @floatToInt(i32, normal[2]),
                     });
                 }
@@ -584,8 +584,8 @@ pub const MeshData = struct {
                             try w.writeAll(", ");
                         }
                         try w.print("vec3({d}, {d}, {d})", .{
-                            @floatToInt(i32, position[0]), 
-                            @floatToInt(i32, position[1]), 
+                            @floatToInt(i32, position[0]),
+                            @floatToInt(i32, position[1]),
                             @floatToInt(i32, position[2]),
                         });
                     }
@@ -607,5 +607,3 @@ pub const MeshData = struct {
     }
 
 };
-
-

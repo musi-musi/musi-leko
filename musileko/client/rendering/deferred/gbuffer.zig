@@ -13,27 +13,26 @@ pub const GBuffer = struct {
 
     pub const Framebuffer = gl.Framebuffer(&.{
         gl.PixelFormat { // color
-            .channels = .rgba,
-            .component = .byte,
-            .srgb = true,
+            .channels = .srgb_alpha,
+            .component = .u8norm,
         },
         gl.PixelFormat { // outline
             .channels = .rgba,
-            .component = .byte,
+            .component = .u8norm,
         },
         gl.PixelFormat { // position
             .channels = .rgba,
-            .component = .float,
+            .component = .f32,
         },
         gl.PixelFormat { // normal
             .channels = .rgb,
-            .component = .byte,
+            .component = .u8norm,
         },
         gl.PixelFormat { // uv
             .channels = .rg,
-            .component = .float,
+            .component = .f32,
         },
-    }, .float);
+    }, .f32);
 
     pub const Textures = struct {
 
