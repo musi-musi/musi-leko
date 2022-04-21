@@ -62,8 +62,7 @@ pub fn render() void {
         .proj = projectionMatrix(),
         .view = session.viewMatrix(),
     };
-    {
-        _deferred_pass.begin();
+    if (_deferred_pass.begin()) {
         defer _deferred_pass.finish();
 
         const player = session.player();

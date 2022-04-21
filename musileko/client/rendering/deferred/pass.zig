@@ -52,15 +52,18 @@ pub const Pass = struct {
         self.shader.uniforms.set("screen_size", .{w, h});
     }
 
-    pub fn begin(self: *Self) void {
+    pub fn begin(self: *Self) bool {
         const width = client.window.width();
         const height = client.window.height();
         if (width != self.buffer.width or height != self.buffer.height) {
             self.buffer.resize(width, height);
             self.setScreenSize(width, height);
         }
-        self.buffer.setAsTarget();
-        self.buffer.clear();
+        if (self.buffer.is_complete) {
+            self.buffer.setAsTarget();
+            self.buffer.clear();
+        }
+        return self.buffer.is_complete;
     }
 
     pub fn finish(self: Self) void {

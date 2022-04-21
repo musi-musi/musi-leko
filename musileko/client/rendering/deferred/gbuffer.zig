@@ -10,6 +10,7 @@ pub const GBuffer = struct {
     textures: Textures,
     width: usize,
     height: usize,
+    is_complete: bool,
 
     pub const Framebuffer = gl.Framebuffer(&.{
         gl.PixelFormat { // color
@@ -75,23 +76,25 @@ pub const GBuffer = struct {
     const Self = @This();
 
     pub fn init(self: *Self, width: usize, height: usize) void {
-        self.framebuffer = Framebuffer.init();
-        self.textures.init();
-        self.textures.depth.allocFramebuffer(width, height);
-        self.textures.color.allocFramebuffer(width, height);
-        self.textures.outline.allocFramebuffer(width, height);
-        self.textures.position.allocFramebuffer(width, height);
-        self.textures.normal.allocFramebuffer(width, height);
-        self.textures.uv.allocFramebuffer(width, height);
-        self.framebuffer.attachDepth(self.textures.depth);
-        self.framebuffer.attachColor(0, self.textures.color);
-        self.framebuffer.attachColor(1, self.textures.outline);
-        self.framebuffer.attachColor(2, self.textures.position);
-        self.framebuffer.attachColor(3, self.textures.normal);
-        self.framebuffer.attachColor(4, self.textures.uv);
+        self.is_complete = width != 0 and height != 0;
         self.width = width;
         self.height = height;
-
+        if (self.is_complete) {
+            self.framebuffer = Framebuffer.init();
+            self.textures.init();
+            self.textures.depth.allocFramebuffer(width, height);
+            self.textures.color.allocFramebuffer(width, height);
+            self.textures.outline.allocFramebuffer(width, height);
+            self.textures.position.allocFramebuffer(width, height);
+            self.textures.normal.allocFramebuffer(width, height);
+            self.textures.uv.allocFramebuffer(width, height);
+            self.framebuffer.attachDepth(self.textures.depth);
+            self.framebuffer.attachColor(0, self.textures.color);
+            self.framebuffer.attachColor(1, self.textures.outline);
+            self.framebuffer.attachColor(2, self.textures.position);
+            self.framebuffer.attachColor(3, self.textures.normal);
+            self.framebuffer.attachColor(4, self.textures.uv);
+        }
     }
 
     pub fn deinit(self: *Self) void {
