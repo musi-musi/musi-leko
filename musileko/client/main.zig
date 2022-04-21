@@ -12,6 +12,8 @@ const session = musileko.engine.session;
 
 const session_renderer = rendering.session_renderer;
 
+pub const log_level: std.log.Level = .debug;
+
 pub fn main() !void {
 
     try window.init(.{});

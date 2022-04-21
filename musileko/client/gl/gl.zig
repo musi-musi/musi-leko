@@ -90,7 +90,8 @@ pub fn gl_debug_callback(
             gl_debug_log.warn("ID: {X}, Source: {s}, Type: {s}, Message: {s}", .{id, source_str, debugtype_str, message});
         },
         c.GL_DEBUG_SEVERITY_HIGH => {
-            panic("ID: {X}, Source: {s}, Type: {s}, Message: {s}", .{id, source_str, debugtype_str, message});
+            gl_debug_log.err("ID: {X}, Source: {s}, Type: {s}, Message: {s}", .{id, source_str, debugtype_str, message});
+            // panic("ID: {X}, Source: {s}, Type: {s}, Message: {s}", .{id, source_str, debugtype_str, message});
         },
         else => panic("Invalid GL debug severity {}", .{ severity }),
     }

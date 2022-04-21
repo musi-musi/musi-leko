@@ -65,6 +65,7 @@ pub const Pass = struct {
 
     pub fn finish(self: Self) void {
         gl.bindDefaultFramebuffer();
+        gl.disableDepthTest();
         self.buffer.textures.color.bind(2);
         self.shader.uniforms.set("g_color", 2);
         self.buffer.textures.outline.bind(3);
@@ -78,8 +79,8 @@ pub const Pass = struct {
         self.shader.use();
         self.screen_mesh.startDraw();
         self.screen_mesh.draw();
-        //self.buffer.blitDepth(0); // produces GL_INVALID_OPERATION because the default depth buffer is not f32
-        gl.bindDefaultFramebuffer();
+        gl.enableDepthTest();
+        // self.buffer.blitDepth(0); // produces GL_INVALID_OPERATION because the default depth buffer is not f32
     }
 
 };
