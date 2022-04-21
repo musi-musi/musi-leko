@@ -12,7 +12,7 @@ pub const config = struct {
         pub const load_radius: u32 = 4; // hard code for now
         pub const load_group_config = util.ThreadGroupConfig {
             .thread_count = .{
-                .cpu_factor = 0.5, 
+                .cpu_factor = 0.5,
             },
         };
     };

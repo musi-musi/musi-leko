@@ -14,8 +14,8 @@ pub fn init() void {
     c.glEnable(c.GL_FRAMEBUFFER_SRGB);
 
     // setup gl debug
-    c.glEnable(c.GL_DEBUG_OUTPUT_SYNCHRONOUS);
     c.glEnable(c.GL_DEBUG_OUTPUT);
+    c.glEnable(c.GL_DEBUG_OUTPUT_SYNCHRONOUS);
     c.glDebugMessageCallback(gl_debug_callback, null);
 }
 
@@ -63,7 +63,11 @@ pub fn gl_debug_callback(
         c.GL_DEBUG_TYPE_ERROR => "Error",
         c.GL_DEBUG_TYPE_MARKER => "Marker",
         c.GL_DEBUG_TYPE_OTHER => "Other",
-        c.GL_DEBUG_TYPE_PERFORMANCE => "Performance",
+        c.GL_DEBUG_TYPE_PERFORMANCE => {
+            // NOTE: ignoring all PERFORMANCE messages because they appear quite often, they might be worth paying attention to once the app is actually in "need to optimize" mode
+            return;
+            //"Performance"
+        },
         c.GL_DEBUG_TYPE_POP_GROUP => "Pop Group",
         c.GL_DEBUG_TYPE_PORTABILITY => "Portability",
         c.GL_DEBUG_TYPE_PUSH_GROUP => "Push Group",
@@ -73,10 +77,11 @@ pub fn gl_debug_callback(
 
     switch (severity) {
         c.GL_DEBUG_SEVERITY_NOTIFICATION => {
-            if (source != c.GL_DEBUG_SOURCE_SHADER_COMPILER) {
-                // ignore shader compiler notifications by default as it produces a good number of them and they're not super useful
-                gl_debug_log.info("ID: {X}, Source: {s}, Type: {s}, Message: {s}", .{id, source_str, debugtype_str, message});
-            }
+            // NOTE: ignoring all NOTIFICATION messages because the sheer volume of nvidia / windows notification messages is causing problems of an unknown type that eventually crash the app
+            // if (source != c.GL_DEBUG_SOURCE_SHADER_COMPILER) {
+            //     // ignore shader compiler notifications by default as it produces a good number of them and they're not super useful
+            //     gl_debug_log.info("ID: {X}, Source: {s}, Type: {s}, Message: {s}", .{id, source_str, debugtype_str, message});
+            // }
         },
         c.GL_DEBUG_SEVERITY_LOW => {
             gl_debug_log.debug("ID: {X}, Source: {s}, Type: {s}, Message: {s}", .{id, source_str, debugtype_str, message});
