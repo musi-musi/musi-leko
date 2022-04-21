@@ -11,7 +11,7 @@ pub fn init() void {
     c.glDisable(c.GL_MULTISAMPLE);
     // c.glEnable(c.GL_MULTISAMPLE);
     c.glEnable(c.GL_CULL_FACE);
-    c.glEnable(c.GL_FRAMEBUFFER_SRGB);
+    // c.glEnable(c.GL_FRAMEBUFFER_SRGB);
 
     // setup gl debug
     c.glEnable(c.GL_DEBUG_OUTPUT);

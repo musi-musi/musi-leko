@@ -27,6 +27,7 @@ pub fn init() !void {
     const io = c.igGetIO();
     // io.*.FontGlobalScale = 2;
     io.*.IniFilename = null;
+    // io.*.ConfigFlags |= c.ImGuiConfigFlags_IsSRGB;
 
     std.mem.copy(u8, &_font_data, font_ttf);
 
@@ -47,7 +48,9 @@ pub fn newFrame() void {
 
 pub fn render() void {
     c.igRender();
+    // c.glDisable(c.GL_FRAMEBUFFER_SRGB);
     c.imgui_gl_render(c.igGetDrawData());
+    // c.glEnable(c.GL_FRAMEBUFFER_SRGB);
 }
 
 pub fn deinit() void {

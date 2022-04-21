@@ -13,7 +13,8 @@ pub const GBuffer = struct {
 
     pub const Framebuffer = gl.Framebuffer(&.{
         gl.PixelFormat { // color
-            .channels = .srgb_alpha,
+            .channels = .rgba,
+            // .channels = .srgb_alpha,
             .component = .u8norm,
         },
         gl.PixelFormat { // outline

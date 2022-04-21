@@ -91,8 +91,9 @@ pub fn init(config: Config) !void {
     c.glfwWindowHint(c.GLFW_OPENGL_PROFILE, c.GLFW_OPENGL_CORE_PROFILE);
     c.glfwWindowHint(c.GLFW_OPENGL_FORWARD_COMPAT, c.GL_TRUE);
     c.glfwWindowHint(c.GLFW_OPENGL_DEBUG_CONTEXT, c.GL_TRUE);
-    c.glfwWindowHint(c.GLFW_SRGB_CAPABLE, c.GL_TRUE);
-    c.glfwWindowHint(c.GLFW_SAMPLES, 4);
+    // c.glfwWindowHint(c.GLFW_SRGB_CAPABLE, c.GL_TRUE);
+    // c.glfwWindowHint(c.GLFW_SRGB_CAPABLE, c.GL_FALSE);
+    // c.glfwWindowHint(c.GLFW_SAMPLES, 4);
 
     _width = config.width;
     _height = config.height;
