@@ -153,7 +153,11 @@ pub const VolumeManager = struct {
             }
         }
 
-        // chunk_list.clearRetainingCapacity();
+
+
+        var load_list = std.ArrayList(ChunkLoad).init(self.allocator);
+        defer load_list.deinit();
+
         var x = load_min.v[0];
         while (x < load_max.v[0]) : (x += 1) {
             var y = load_min.v[1];
@@ -163,14 +167,39 @@ pub const VolumeManager = struct {
                     const pos = Vec3i.init(.{x, y, z});
                     if (!self.chunkPositionsContains(pos)) {
                         try self.chunk_positions.append(self.allocator, pos);
-                        try self.load_queue.enqueue(.{ .chunk_position = pos, .state = .loading});
+                        try load_list.append(.{ .chunk_position = pos, .state = .loading});
                         // try chunk_list.append(chunk);
                     }
                 }
             }
         }
-        // try self.load_thread_group.submitItems(chunk_list.items);
+
+        std.sort.sort(
+            ChunkLoad,
+            load_list.items,
+            ChunkLoadSortContext {
+                .load_center = new_center,
+            },
+            ChunkLoadSortContext.lessThan,
+        );
+
+        for (load_list.items) |load| {
+            try self.load_queue.enqueue(load);
+        }
+
     }
+
+    const ChunkLoadSortContext = struct {
+        load_center: Vec3i,
+
+        fn lessThan(context: ChunkLoadSortContext, lhs: ChunkLoad, rhs: ChunkLoad) bool {
+            _ = context;
+            const dist_lhs = lhs.chunk_position.sub(context.load_center).mag2();
+            const dist_rhs = rhs.chunk_position.sub(context.load_center).mag2();
+            return dist_lhs < dist_rhs;
+        }
+
+    };
 
     fn chunkPositionsContains(self: Self, position: Vec3i) bool {
         for (self.chunk_positions.items) |pos| {
