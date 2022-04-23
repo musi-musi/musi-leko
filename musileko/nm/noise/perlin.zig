@@ -53,44 +53,30 @@ pub fn Perlin(comptime Scalar_: type, comptime dimensions_: u32, comptime wrap_:
             break: blk result;
         };
 
-        fn mod(position: IVector) IVector {
-            if (wrap) |w| {
-                var result: IVector = undefined;
-                inline for (IVector.indices) |i| {
-                    result.v[i] = @rem(position.v[i], w);
-                }
-                return result;
-            }
-            else {
-                return position;
-            }
-        }
-
         pub fn sample(self: Self, value: Vector.Value) Scalar {
             _ = self;
             var v = Vector.init(value);
             const min: IVector = v.floor().cast(isize);
             const max = min.add(IVector.fill(1));
             const a = min.v;
-            // const a = mod(min).v;
-            const b = mod(max).v;
+            const b = max.v;
             const s = v.sub(min.cast(Scalar)).v;
             switch (dimensions) {
                 1 => {
                     return interpolate(
-                        dotGradient(.{a[0]}, value),
-                        dotGradient(.{b[0]}, value),
+                        dotGradient(.{a[0]}, v),
+                        dotGradient(.{b[0]}, v),
                     s[0]);
                 },
                 2 => {
                     return interpolate(
                         interpolate(
-                            dotGradient(.{a[0], a[1]}, value),
-                            dotGradient(.{b[0], a[1]}, value),
+                            dotGradient(.{a[0], a[1]}, v),
+                            dotGradient(.{b[0], a[1]}, v),
                         s[0]),
                         interpolate(
-                            dotGradient(.{a[0], b[1]}, value),
-                            dotGradient(.{b[0], b[1]}, value),
+                            dotGradient(.{a[0], b[1]}, v),
+                            dotGradient(.{b[0], b[1]}, v),
                         s[0]),
                     s[1]);
                 },
@@ -98,22 +84,22 @@ pub fn Perlin(comptime Scalar_: type, comptime dimensions_: u32, comptime wrap_:
                     return interpolate(
                         interpolate(
                             interpolate(
-                                dotGradient(.{a[0], a[1], a[2]}, value),
-                                dotGradient(.{b[0], a[1], a[2]}, value),
+                                dotGradient(.{a[0], a[1], a[2]}, v),
+                                dotGradient(.{b[0], a[1], a[2]}, v),
                             s[0]),
                             interpolate(
-                                dotGradient(.{a[0], b[1], a[2]}, value),
-                                dotGradient(.{b[0], b[1], a[2]}, value),
+                                dotGradient(.{a[0], b[1], a[2]}, v),
+                                dotGradient(.{b[0], b[1], a[2]}, v),
                             s[0]),
                         s[1]),
                         interpolate(
                             interpolate(
-                                dotGradient(.{a[0], a[1], b[2]}, value),
-                                dotGradient(.{b[0], a[1], b[2]}, value),
+                                dotGradient(.{a[0], a[1], b[2]}, v),
+                                dotGradient(.{b[0], a[1], b[2]}, v),
                             s[0]),
                             interpolate(
-                                dotGradient(.{a[0], b[1], b[2]}, value),
-                                dotGradient(.{b[0], b[1], b[2]}, value),
+                                dotGradient(.{a[0], b[1], b[2]}, v),
+                                dotGradient(.{b[0], b[1], b[2]}, v),
                             s[0]),
                         s[1]),
                     s[2]);
@@ -123,44 +109,44 @@ pub fn Perlin(comptime Scalar_: type, comptime dimensions_: u32, comptime wrap_:
                         interpolate(
                             interpolate(
                                 interpolate(
-                                    dotGradient(.{a[0], a[1], a[2], a[3]}, value),
-                                    dotGradient(.{b[0], a[1], a[2], a[3]}, value),
+                                    dotGradient(.{a[0], a[1], a[2], a[3]}, v),
+                                    dotGradient(.{b[0], a[1], a[2], a[3]}, v),
                                 s[0]),
                                 interpolate(
-                                    dotGradient(.{a[0], b[1], a[2], a[3]}, value),
-                                    dotGradient(.{b[0], b[1], a[2], a[3]}, value),
+                                    dotGradient(.{a[0], b[1], a[2], a[3]}, v),
+                                    dotGradient(.{b[0], b[1], a[2], a[3]}, v),
                                 s[0]),
                             s[1]),
                             interpolate(
                                 interpolate(
-                                    dotGradient(.{a[0], a[1], b[2], a[3]}, value),
-                                    dotGradient(.{b[0], a[1], b[2], a[3]}, value),
+                                    dotGradient(.{a[0], a[1], b[2], a[3]}, v),
+                                    dotGradient(.{b[0], a[1], b[2], a[3]}, v),
                                 s[0]),
                                 interpolate(
-                                    dotGradient(.{a[0], b[1], b[2], a[3]}, value),
-                                    dotGradient(.{b[0], b[1], b[2], a[3]}, value),
+                                    dotGradient(.{a[0], b[1], b[2], a[3]}, v),
+                                    dotGradient(.{b[0], b[1], b[2], a[3]}, v),
                                 s[0]),
                             s[1]),
                         s[2]),
                         interpolate(
                             interpolate(
                                 interpolate(
-                                    dotGradient(.{a[0], a[1], a[2], b[3]}, value),
-                                    dotGradient(.{b[0], a[1], a[2], b[3]}, value),
+                                    dotGradient(.{a[0], a[1], a[2], b[3]}, v),
+                                    dotGradient(.{b[0], a[1], a[2], b[3]}, v),
                                 s[0]),
                                 interpolate(
-                                    dotGradient(.{a[0], b[1], a[2], b[3]}, value),
-                                    dotGradient(.{b[0], b[1], a[2], b[3]}, value),
+                                    dotGradient(.{a[0], b[1], a[2], b[3]}, v),
+                                    dotGradient(.{b[0], b[1], a[2], b[3]}, v),
                                 s[0]),
                             s[1]),
                             interpolate(
                                 interpolate(
-                                    dotGradient(.{a[0], a[1], b[2], b[3]}, value),
-                                    dotGradient(.{b[0], a[1], b[2], b[3]}, value),
+                                    dotGradient(.{a[0], a[1], b[2], b[3]}, v),
+                                    dotGradient(.{b[0], a[1], b[2], b[3]}, v),
                                 s[0]),
                                 interpolate(
-                                    dotGradient(.{a[0], b[1], b[2], b[3]}, value),
-                                    dotGradient(.{b[0], b[1], b[2], b[3]}, value),
+                                    dotGradient(.{a[0], b[1], b[2], b[3]}, v),
+                                    dotGradient(.{b[0], b[1], b[2], b[3]}, v),
                                 s[0]),
                             s[1]),
                         s[2]),
@@ -174,11 +160,11 @@ pub fn Perlin(comptime Scalar_: type, comptime dimensions_: u32, comptime wrap_:
             return (b - a) * (3 - t * 2) * t * t + a;
         }
 
-        fn dotGradient(value: [dimensions]isize, position: Vector.Value) Scalar {
+        fn dotGradient(value: [dimensions]isize, position: Vector) Scalar {
             const grad = gradient(value);
             var dist: Vector = undefined;
             inline for(Vector.indices) |i| {
-                dist.v[i] = @intToFloat(Scalar, value[i]) - position[i];
+                dist.v[i] = @intToFloat(Scalar, value[i]) - position.v[i];
             }
             return dist.dot(grad);
         }

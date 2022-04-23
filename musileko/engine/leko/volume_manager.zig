@@ -209,6 +209,12 @@ pub const VolumeManager = struct {
             else {
                 id.* = 0;
             }
+            // if (pos.v[2] < 1) {
+            //     id.* = 1;
+            // }
+            // else {
+            //     id.* = 0;
+            // }
         }
         chunk.state = .active;
         try self.loaded_chunk_queue.enqueue(chunk);

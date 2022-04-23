@@ -1,11 +1,11 @@
 in vec4 frag_position;
 in vec3 frag_normal;
 in float frag_light;
-in flat float frag_ao[4];
+flat in float frag_ao[4];
 in vec2 frag_uv_face;
 in vec2 frag_uv_texture;
 in float frag_fog;
-in flat int frag_outline;
+flat in int frag_outline;
 
 layout (location = 0) out vec4 g_color;
 layout (location = 1) out vec4 g_outline;
@@ -68,7 +68,8 @@ void main() {
 #else
     float color = mix(0.3, 0.35, band(noise, color_bands)); // NOTE: the pow(x, 2.2) is a hack to keep the look the same without tweaking the equations
 #endif
-    // float color = (noise + 1) / 2;
+    // color = texture(perlin, frag_uv_texture).x;
+    // color = (color + 1) / 2;
     g_color.xyz = mix(vec3(color * ao * light), vec3(0), frag_fog);
     g_color.w = 1;
     g_outline = selection_outline_color * float(frag_outline);

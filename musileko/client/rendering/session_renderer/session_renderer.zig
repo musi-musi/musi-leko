@@ -72,18 +72,6 @@ pub fn render() void {
         volume_model.startDraw();
         volume_model.drawModel(&_model);
 
-        // if (player.select_reference) |selection| {
-        //     gl.disableDepthTest();
-        //     defer gl.enableDepthTest();
-
-        //     _outline_pass.begin();
-        //     _outline_pass.setCamera(camera);
-        //     const position = selection.reference.globalPosition().cast(f32);
-        //     _outline_pass.setModelMatrix(nm.transform.createTranslate(position));
-        //     selection_cube.bindMesh();
-        //     selection_cube.draw();
-        // }
-
     }
 }
 

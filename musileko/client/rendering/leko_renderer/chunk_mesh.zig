@@ -88,19 +88,20 @@ pub const chunk_mesh = struct {
         const size: u32 = 256;
         // const perlin_wrap: f32 = 64;
         const Data = [size][size][2]f32;
-        // const perlin = nm.noise.Perlin2(null){};
+        // const perlin = nm.noise.Perlin2(perlin_wrap){};
         var data: Data = undefined;
         var rng = std.rand.DefaultPrng.init(0);
         const r = rng.random();
         var x: u32 = 0;
         while (x < size) : (x += 1) {
-            // const u = @intToFloat(f32, x) / @intToFloat(f32, size - 1) * (perlin_wrap - 1);
+            // const u = @intToFloat(f32, x) / @intToFloat(f32, size) * (perlin_wrap);
             var y: u32 = 0;
             while (y < size) : (y += 1) {
-                // const v = @intToFloat(f32, y) / @intToFloat(f32, size - 1) * (perlin_wrap - 1);
+                // const v = @intToFloat(f32, y) / @intToFloat(f32, size) * (perlin_wrap);
                 data[x][y][0] = (r.float(f32) * 2) - 1;
                 data[x][y][1] = (r.float(f32) * 2) - 1;
                 // data[x][y][0] = perlin.sample(.{u, v});
+                // data[x][y][1] = perlin.sample(.{u, v});
             }
         }
 
@@ -541,7 +542,7 @@ pub const MeshData = struct {
                 try w.writeAll("const vec3 cube_umat_texture[6] = vec3[6](");
                 for (std.enums.values(Cardinal3)) |card_n, i| {
                     if (i != 0) {
-                        try w.writeAll(",");
+                        try w.writeAll(", ");
                     }
                     const umat = Vec3.unitSigned(cardU(card_n));
                     try w.print("vec3{}", .{ umat });
@@ -550,18 +551,15 @@ pub const MeshData = struct {
                 try w.writeAll("const vec3 cube_vmat_texture[6] = vec3[6](");
                 for (std.enums.values(Cardinal3)) |card_n, i| {
                     if (i != 0) {
-                        try w.writeAll(",");
+                        try w.writeAll(", ");
                     }
                     const vmat = Vec3.unitSigned(cardV(card_n));
                     try w.print("vec3{}", .{ vmat });
                 }
                 try w.writeAll(");\n");
-                try w.writeAll("const vec3 cube_positions[6][4] = vec3[6][4](");
-                for (std.enums.values(Cardinal3)) |card_n, i| {
-                    if (i != 0) {
-                        try w.writeAll(",");
-                    }
-                    try w.writeAll("\n    vec3[4](");
+                try w.writeAll("const vec3 cube_positions[24] = vec3[24](");
+                var i: u32 = 0;
+                for (std.enums.values(Cardinal3)) |card_n| {
                     const card_u = cardU(card_n);
                     const card_v = cardV(card_n);
                     const n = vertPositionOffset(card_n);
@@ -579,8 +577,8 @@ pub const MeshData = struct {
                         n.add(u[0]).add(v[0]).v,
                         n.add(u[1]).add(v[0]).v,
                     };
-                    for (positions) |position, p| {
-                        if (p != 0) {
+                    for (positions) |position| {
+                        if (i != 0) {
                             try w.writeAll(", ");
                         }
                         try w.print("vec3({d}, {d}, {d})", .{
@@ -588,11 +586,10 @@ pub const MeshData = struct {
                             @floatToInt(i32, position[1]),
                             @floatToInt(i32, position[2]),
                         });
+                        i += 1;
                     }
-
-                    try w.writeAll(")");
                 }
-                try w.writeAll("\n);\n");
+                try w.writeAll(");\n");
             }
 
             fn vertPositionOffset(comptime cardinal: Cardinal3) Vec3 {
