@@ -2,16 +2,16 @@ const std = @import("std");
 const noise = @import(".zig");
 const nm = @import("../.zig");
 
-pub fn Perlin1(comptime wrap: ?usize) type { return Perlin(f32, 1, wrap); }
-pub fn Perlin2(comptime wrap: ?usize) type { return Perlin(f32, 2, wrap); }
-pub fn Perlin3(comptime wrap: ?usize) type { return Perlin(f32, 3, wrap); }
-pub fn Perlin4(comptime wrap: ?usize) type { return Perlin(f32, 4, wrap); }
-pub fn Perlin1d(comptime wrap: ?usize) type { return Perlin(f64, 1, wrap); }
-pub fn Perlin2d(comptime wrap: ?usize) type { return Perlin(f64, 2, wrap); }
-pub fn Perlin3d(comptime wrap: ?usize) type { return Perlin(f64, 3, wrap); }
-pub fn Perlin4d(comptime wrap: ?usize) type { return Perlin(f64, 4, wrap); }
+pub const Perlin1 = Perlin(f32, 1);
+pub const Perlin2 = Perlin(f32, 2);
+pub const Perlin3 = Perlin(f32, 3);
+pub const Perlin4 = Perlin(f32, 4);
+pub const Perlin1d = Perlin(f64, 1);
+pub const Perlin2d = Perlin(f64, 2);
+pub const Perlin3d = Perlin(f64, 3);
+pub const Perlin4d = Perlin(f64, 4);
 
-pub fn Perlin(comptime Scalar_: type, comptime dimensions_: u32, comptime wrap_: ?usize) type {
+pub fn Perlin(comptime Scalar_: type, comptime dimensions_: u32) type {
     comptime nm.assertFloat(Scalar_);
     comptime nm.assertValidDimensionCount(dimensions_);
     return struct {
@@ -22,15 +22,13 @@ pub fn Perlin(comptime Scalar_: type, comptime dimensions_: u32, comptime wrap_:
         pub const Vector = nm.Vector(Scalar, dimensions);
         pub const IVector = nm.Vector(isize, dimensions);
         
-        const wrap = wrap_;
-
 
         const Self = @This();
 
         const gradient_table = blk: {
             @setEvalBranchQuota(100000);
             var result: [548]Vector = undefined;
-            var rng = std.rand.DefaultPrng.init(0x42342984);
+            var rng = std.rand.DefaultPrng.init(0x983546);
             const r = rng.random();
             var v = 0;
             while (v < result.len) : (v += 1) {

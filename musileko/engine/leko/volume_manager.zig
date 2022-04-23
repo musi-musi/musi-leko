@@ -212,7 +212,7 @@ pub const VolumeManager = struct {
 
     fn processLoadChunk(group: *ChunkThreadGroup, chunk: *Chunk, _: usize) !void {
         const self = @fieldParentPtr(Self, "load_thread_group", group);
-        const perlin = nm.noise.Perlin3(null){};
+        const perlin = nm.noise.Perlin3{};
         const scale: f32 = 0.025;
 
         const octaves: u32 = 4;
