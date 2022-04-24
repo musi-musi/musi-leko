@@ -67,6 +67,9 @@ pub const chunk_mesh = struct {
 
             gl.uniform("player_selection_position", .vec3i),
             gl.uniform("player_selection_face", .int),
+
+            gl.uniform("near_plane", .float),
+            gl.uniform("far_plane", .float),
         },
         @embedFile("chunk_mesh.vert"),
         @embedFile("chunk_mesh.frag"),
@@ -122,6 +125,8 @@ pub const chunk_mesh = struct {
     pub fn setCamera(camera: rendering.Camera) void {
         _shader.uniforms.set("view", camera.view.v);
         _shader.uniforms.set("proj", camera.proj.v);
+        _shader.uniforms.set("near_plane", camera.near_plane);
+        _shader.uniforms.set("far_plane", camera.far_plane);
     }
 
     pub fn setPlayerSelection(selection: ?leko.RaycastHit) void {

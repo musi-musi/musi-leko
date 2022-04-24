@@ -58,10 +58,11 @@ pub fn render() void {
     gl.clearDepth(.float, 1);
     gl.clear(.color_depth);
     _model_manager.uploadGeneratedMeshes();
-    const camera = Camera {
-        .proj = projectionMatrix(),
+    var camera = Camera {
         .view = session.viewMatrix(),
+        .proj = undefined,
     };
+    camera.calculatePerspective(window.width(), window.height());
     if (_deferred_pass.begin()) {
         defer _deferred_pass.finish();
 

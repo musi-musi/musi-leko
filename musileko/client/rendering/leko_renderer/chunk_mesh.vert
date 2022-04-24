@@ -7,6 +7,9 @@ uniform ivec3 chunk_position;
 
 uniform vec3 light;
 
+uniform float near_plane;
+uniform float float_plane;
+
 uniform float fog_falloff = 5;
 uniform float fog_start = 1.5;
 uniform float fog_end = 3.75;
@@ -42,7 +45,9 @@ void main() {
     frag_ao[2] = (3 - float(ao >> 4 & 0x3)) / 3.0;
     frag_ao[3] = (3 - float(ao >> 6 & 0x3)) / 3.0;
     frag_uv_face = cube_uvs_face[gl_VertexID];
-    gl_Position = proj * view * vec4(position, 1);
+    vec4 view_position = view * vec4(position, 1);
+    gl_Position = proj * view_position;
+
 
     frag_uv_texture.x = dot(position, cube_umat_texture[n]);
     frag_uv_texture.y = dot(position, cube_vmat_texture[n]);
@@ -63,7 +68,7 @@ void main() {
     else {
         frag_outline = 0;
     }
-    frag_position = vec4(position, 0);
+    frag_position = vec4(position, view_position.z);
     frag_normal = normal;
 
 }

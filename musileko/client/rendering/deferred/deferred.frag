@@ -10,12 +10,35 @@ uniform vec2 screen_size;
 
 uniform float outline_radius = 1;
 
+uniform float min_edge_dist = 0.99;
+
 out vec4 out_color;
+
+vec4 calcEdge() {
+    vec4 self_pos = texture(g_position, frag_uv);
+    float dx = 1 / screen_size.x;
+    float dy = 1 / screen_size.y;
+    vec2 offsets[4];
+    offsets[0] = vec2( 1,  0);
+    offsets[1] = vec2(-1,  0);
+    offsets[2] = vec2( 0,  1);
+    offsets[3] = vec2( 0, -1);
+    float max_depth_dist = 0;
+    float max_pos_dist = 0;
+    for (int i = 0; i < 4; i ++) {
+        vec4 neighbor_pos = texture(g_position, frag_uv + (offsets[i] / screen_size));
+        max_depth_dist = max(max_depth_dist, self_pos.w - neighbor_pos.w);
+        max_pos_dist = max(max_pos_dist, length(self_pos.xyz - neighbor_pos.xyz));
+    }
+    float factor = 0;
+    if (max_depth_dist > min_edge_dist && max_pos_dist > min_edge_dist) {
+        factor = 1;
+    }
+    return vec4(1, 1, 1, 0) * 0.1 * factor;
+}
 
 vec4 calcOutline() {
     vec4 self = texture(g_outline, frag_uv);
-    float dx = outline_radius / screen_size.x;
-    float dy = outline_radius / screen_size.y;
     vec2 offsets[8];
     offsets[0] = vec2( 1,  0);
     offsets[1] = vec2(-1,  0);
@@ -52,6 +75,7 @@ void main() {
     vec2 r = abs(pixel - center);
 
     if (max(r.x, r.y) < 2) {
+        // crosshair
         out_color = vec4(1);
     }
     else {
