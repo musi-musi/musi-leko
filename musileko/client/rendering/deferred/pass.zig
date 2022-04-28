@@ -15,6 +15,7 @@ pub const Pass = struct {
     buffer: GBuffer,
     screen_mesh: ScreenMesh,
     shader: Shader,
+    noise_texture: NoiseTexture,
 
     const Shader = rendering.Shader(&.{
             gl.uniformTextureUnit("g_color"),
@@ -22,12 +23,26 @@ pub const Pass = struct {
             gl.uniformTextureUnit("g_position"),
             gl.uniformTextureUnit("g_normal"),
             gl.uniformTextureUnit("g_uv"),
+            gl.uniformTextureUnit("g_lighting"),
+
             gl.uniform("screen_size", .vec2),
+
+            gl.uniform("light_direction", .vec3),
+
+            gl.uniform("view", .mat4),
+            gl.uniform("proj", .mat4),
+
+            gl.uniformTextureUnit("tex_noise"),
         },
         @embedFile("deferred.vert"),
         @embedFile("deferred.frag"),
         &.{},
     );
+
+    const NoiseTexture = gl.Texture(.texture_2d, .{
+        .channels = .rg,
+        .component = .f32,
+    });
 
     const Self = @This();
 
@@ -38,6 +53,33 @@ pub const Pass = struct {
         self.screen_mesh.init();
         self.shader = try Shader.init();
         self.setScreenSize(width, height);
+        self.setLightDirection(nm.Vec3.init(.{1, 3, 2}).norm());
+
+        self.noise_texture = NoiseTexture.init();
+        const size: u32 = 256;
+        // const perlin_wrap: f32 = 64;
+        const Data = [size][size][2]f32;
+        // const perlin = nm.noise.Perlin2(perlin_wrap){};
+        var data: Data = undefined;
+        var rng = std.rand.DefaultPrng.init(0);
+        const r = rng.random();
+        var x: u32 = 0;
+        while (x < size) : (x += 1) {
+            // const u = @intToFloat(f32, x) / @intToFloat(f32, size) * (perlin_wrap);
+            var y: u32 = 0;
+            while (y < size) : (y += 1) {
+                // const v = @intToFloat(f32, y) / @intToFloat(f32, size) * (perlin_wrap);
+                data[x][y][0] = (r.float(f32) * 2) - 1;
+                data[x][y][1] = (r.float(f32) * 2) - 1;
+                // data[x][y][0] = perlin.sample(.{u, v});
+                // data[x][y][1] = perlin.sample(.{u, v});
+            }
+        }
+
+        self.noise_texture.alloc(size, size);
+        self.noise_texture.upload(size, size, @ptrCast(*[size * size][2]f32, &data));
+        self.shader.uniforms.set("tex_noise", 1);
+        self.noise_texture.setFilter(.linear, .linear);
     }
 
     pub fn deinit(self: *Self) void {
@@ -50,6 +92,15 @@ pub const Pass = struct {
         const w = @intToFloat(f32, width);
         const h = @intToFloat(f32, height);
         self.shader.uniforms.set("screen_size", .{w, h});
+    }
+
+    pub fn setLightDirection(self: Self, light_direction: nm.Vec3) void {
+        self.shader.uniforms.set("light_direction", light_direction.v);
+    }
+
+    pub fn setCamera(self: Self, camera: rendering.Camera) void {
+        self.shader.uniforms.set("view", camera.view.v);
+        self.shader.uniforms.set("proj", camera.proj.v);
     }
 
     pub fn begin(self: *Self) bool {
@@ -69,6 +120,10 @@ pub const Pass = struct {
     pub fn finish(self: Self) void {
         gl.bindDefaultFramebuffer();
         gl.disableDepthTest();
+        
+        self.noise_texture.bind(1);
+        self.shader.uniforms.set("tex_noise", 1);
+
         self.buffer.textures.color.bind(2);
         self.shader.uniforms.set("g_color", 2);
         self.buffer.textures.outline.bind(3);
@@ -79,6 +134,8 @@ pub const Pass = struct {
         self.shader.uniforms.set("g_normal", 5);
         self.buffer.textures.uv.bind(6);
         self.shader.uniforms.set("g_uv", 6);
+        self.buffer.textures.lighting.bind(7);
+        self.shader.uniforms.set("g_lighting", 7);
         self.shader.use();
         self.screen_mesh.startDraw();
         self.screen_mesh.draw();

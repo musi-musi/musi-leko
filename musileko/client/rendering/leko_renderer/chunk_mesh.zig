@@ -26,12 +26,6 @@ pub const chunk_mesh = struct {
     var _array: Array = undefined;
     var _index_buffer: Array.IndexBuffer = undefined;
     var _shader: Shader = undefined;
-    var _perlin_texture: Texture = undefined;
-
-    const Texture = gl.Texture(.texture_2d, .{
-        .channels = .rg,
-        .component = .f32,
-    });
 
     /// ```
     ///     0 --- 1
@@ -60,11 +54,6 @@ pub const chunk_mesh = struct {
 
             gl.uniform("chunk_position", .vec3i),
 
-            gl.uniform("light", .vec3),
-            gl.uniformTextureUnit("perlin"),
-
-            gl.uniform("time", .float),
-
             gl.uniform("player_selection_position", .vec3i),
             gl.uniform("player_selection_face", .int),
 
@@ -82,44 +71,12 @@ pub const chunk_mesh = struct {
         _index_buffer.data(&.{0, 1, 3, 0, 3, 2}, .static_draw);
         _array.bindIndexBuffer(_index_buffer);
         _shader = try Shader.init();
-
-        const light = Vec3.init(.{1, 3, 2}).norm();
-        _shader.uniforms.set("light", light.v);
-
-        _perlin_texture = Texture.init();
-
-        const size: u32 = 256;
-        // const perlin_wrap: f32 = 64;
-        const Data = [size][size][2]f32;
-        // const perlin = nm.noise.Perlin2(perlin_wrap){};
-        var data: Data = undefined;
-        var rng = std.rand.DefaultPrng.init(0);
-        const r = rng.random();
-        var x: u32 = 0;
-        while (x < size) : (x += 1) {
-            // const u = @intToFloat(f32, x) / @intToFloat(f32, size) * (perlin_wrap);
-            var y: u32 = 0;
-            while (y < size) : (y += 1) {
-                // const v = @intToFloat(f32, y) / @intToFloat(f32, size) * (perlin_wrap);
-                data[x][y][0] = (r.float(f32) * 2) - 1;
-                data[x][y][1] = (r.float(f32) * 2) - 1;
-                // data[x][y][0] = perlin.sample(.{u, v});
-                // data[x][y][1] = perlin.sample(.{u, v});
-            }
-        }
-
-        _perlin_texture.alloc(size, size);
-        _perlin_texture.upload(size, size, @ptrCast(*[size * size][2]f32, &data));
-        _shader.uniforms.set("perlin", 1);
-        _perlin_texture.setFilter(.linear, .linear);
-        // _perlin_texture.setFilter(.nearest, .nearest);
     }
 
     pub fn deinit() void {
         _array.deinit();
         _index_buffer.deinit();
         _shader.deinit();
-        _perlin_texture.deinit();
     }
 
     pub fn setCamera(camera: rendering.Camera) void {
@@ -140,10 +97,8 @@ pub const chunk_mesh = struct {
     }
 
     pub fn startDraw() void {
-        _shader.uniforms.set("time", @floatCast(f32, window.currentTime()));
         _array.bind();
         _shader.use();
-        _perlin_texture.bind(1);
     }
 
     pub fn bindMesh(mesh: *ChunkMesh) void {

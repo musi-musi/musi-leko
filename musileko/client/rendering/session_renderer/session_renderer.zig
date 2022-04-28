@@ -27,7 +27,6 @@ const VolumeModelManager = leko_renderer.VolumeModelManager;
 var _model: VolumeModel = undefined;
 var _model_manager: VolumeModelManager = undefined;
 var _deferred_pass: deferred.Pass = undefined;
-var _outline_pass: deferred.OutlinePass = undefined;
 
 pub fn init(allocator: Allocator) !void {
     try volume_model.init();
@@ -40,15 +39,12 @@ pub fn init(allocator: Allocator) !void {
     volume_manager.event_leko_edit.addListener(&_model_manager.listener_leko_edit);
     selection_cube.init();
     try _deferred_pass.init();
-    try _outline_pass.init();
-    _outline_pass.setColor(nm.Vec4.init(.{1, 0, 1, 1}));
 }
 
 pub fn deinit() void {
     _model_manager.deinit();
     _model.deinit();
     _deferred_pass.deinit();
-    _outline_pass.deinit();
     volume_model.deinit();
     selection_cube.deinit();
 }
@@ -63,6 +59,7 @@ pub fn render() void {
         .proj = undefined,
     };
     camera.calculatePerspective(window.width(), window.height());
+    _deferred_pass.setCamera(camera);
     if (_deferred_pass.begin()) {
         defer _deferred_pass.finish();
 

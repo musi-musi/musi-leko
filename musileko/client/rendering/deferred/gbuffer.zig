@@ -28,11 +28,15 @@ pub const GBuffer = struct {
         },
         gl.PixelFormat { // normal
             .channels = .rgb,
-            .component = .u8norm,
+            .component = .i8norm,
         },
         gl.PixelFormat { // uv
             .channels = .rg,
             .component = .f32,
+        },
+        gl.PixelFormat { // lighting
+            .channels = .rg,
+            .component = .u8norm,
         },
     }, .f32);
 
@@ -44,6 +48,7 @@ pub const GBuffer = struct {
         position: Position,
         normal: Normal,
         uv: Uv,
+        lighting: Lighting,
 
         pub const Depth = Framebuffer.DepthTexture;
         pub const Color = Framebuffer.ColorTexture(0);
@@ -51,6 +56,7 @@ pub const GBuffer = struct {
         pub const Position = Framebuffer.ColorTexture(2);
         pub const Normal = Framebuffer.ColorTexture(3);
         pub const Uv = Framebuffer.ColorTexture(4);
+        pub const Lighting = Framebuffer.ColorTexture(5);
 
         pub fn init(self: *Textures) void {
             self.depth = Depth.init();
@@ -59,6 +65,7 @@ pub const GBuffer = struct {
             self.position = Position.init();
             self.normal = Normal.init();
             self.uv = Uv.init();
+            self.lighting = Lighting.init();
         }
 
         pub fn deinit(self: *Textures) void {
@@ -68,6 +75,7 @@ pub const GBuffer = struct {
             self.position.deinit();
             self.normal.deinit();
             self.uv.deinit();
+            self.lighting.deinit();
         }
 
 
@@ -88,12 +96,14 @@ pub const GBuffer = struct {
             self.textures.position.allocFramebuffer(width, height);
             self.textures.normal.allocFramebuffer(width, height);
             self.textures.uv.allocFramebuffer(width, height);
+            self.textures.lighting.allocFramebuffer(width, height);
             self.framebuffer.attachDepth(self.textures.depth);
             self.framebuffer.attachColor(0, self.textures.color);
             self.framebuffer.attachColor(1, self.textures.outline);
             self.framebuffer.attachColor(2, self.textures.position);
             self.framebuffer.attachColor(3, self.textures.normal);
             self.framebuffer.attachColor(4, self.textures.uv);
+            self.framebuffer.attachColor(5, self.textures.lighting);
         }
     }
 
@@ -117,6 +127,7 @@ pub const GBuffer = struct {
         self.framebuffer.clearColor(2, .{0, 0, 0, 0});
         self.framebuffer.clearColor(3, .{0, 0, 0});
         self.framebuffer.clearColor(4, .{0, 0});
+        self.framebuffer.clearColor(5, .{0, 0});
         self.framebuffer.clearDepth(1);
     }
 

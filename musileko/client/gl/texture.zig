@@ -272,15 +272,15 @@ pub const PixelChannels = enum(c_uint) {
 pub const PixelComponent = enum(c_uint) {
     u8norm,
     i8norm,
-    u8,
-    i8,
+    @"u8",
+    @"i8",
+    @"u16",
+    @"i16",
     u16norm,
     i16norm,
-    u16,
-    i16,
-    u32,
-    i32,
-    f32,
+    @"u32",
+    @"i32",
+    @"f32",
 
     const Self = @This();
 
