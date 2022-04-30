@@ -22,7 +22,7 @@ uniform float fog_end = 3.75;
 
 uniform vec3 light_direction;
 uniform float light_strength = 0.5;
-uniform float ao_strength = 0.25;
+uniform float ao_strength = 0.5;
 
 #define UV_SCALE (1.0/32.0)
 #define WARP_SCALE 0.001
@@ -32,9 +32,9 @@ uniform vec2 warp_uv_scale = vec2(1);
 uniform vec2 warp_amount = vec2(0, 1);
 uniform vec2 noise_uv_scale = vec2(0.5, 2);
 
-uniform vec4 pallete_a = vec4(0.27, 0.25, 0.3, 1);
-uniform vec4 pallete_b = vec4(0.35, 0.3, 0.33, 1);
-uniform vec4 pallete_dark = vec4(0.1, 0, 0.1, 1);
+uniform vec4 pallete_a = vec4(0.27, 0.20, 0.30, 1);
+uniform vec4 pallete_b = vec4(0.35, 0.25, 0.32, 1);
+uniform vec4 pallete_dark = vec4(0.07, 0.03, 0.1, 1);
 
 out vec4 out_color;
 

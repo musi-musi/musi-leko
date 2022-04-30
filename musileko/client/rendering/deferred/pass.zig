@@ -33,6 +33,14 @@ pub const Pass = struct {
             gl.uniform("proj", .mat4),
 
             gl.uniformTextureUnit("tex_noise"),
+            
+            gl.uniform("warp_uv_scale", .vec2),
+            gl.uniform("warp_amount", .vec2),
+            gl.uniform("noise_uv_scale", .vec2),
+
+            gl.uniform("pallete_a", .vec4),
+            gl.uniform("pallete_b", .vec4),
+            gl.uniform("pallete_dark", .vec4),
         },
         @embedFile("deferred.vert"),
         @embedFile("deferred.frag"),
@@ -101,6 +109,18 @@ pub const Pass = struct {
     pub fn setCamera(self: Self, camera: rendering.Camera) void {
         self.shader.uniforms.set("view", camera.view.v);
         self.shader.uniforms.set("proj", camera.proj.v);
+    }
+
+    pub fn setMaterialPattern(self: Self, pattern: rendering.material.Pattern) void {
+        self.shader.uniforms.set("warp_uv_scale", pattern.warp_uv_scale.v);
+        self.shader.uniforms.set("warp_amount", pattern.warp_amount.v);
+        self.shader.uniforms.set("noise_uv_scale", pattern.noise_uv_scale.v);
+    }
+
+    pub fn setMaterialPallete(self: Self, pallete: rendering.material.Pallete) void {
+        self.shader.uniforms.set("pallete_a", pallete.color0.v);
+        self.shader.uniforms.set("pallete_b", pallete.color1.v);
+        self.shader.uniforms.set("pallete_dark", pallete.color_dark.v);
     }
 
     pub fn begin(self: *Self) bool {

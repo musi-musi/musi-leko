@@ -33,7 +33,7 @@ pub fn float(label: CStr, v: *f32, config: SliderConfig) bool {
         config.min,
         config.max,
         config.format.ptr,
-        types.sumFlags(SliderFlags, config.flags),
+        gui.sumFlags(SliderFlags, config.flags),
     );
 }
 
@@ -45,7 +45,7 @@ pub fn float2(label: CStr, v: *[2]f32, config: SliderConfig) bool {
         config.min,
         config.max,
         config.format.ptr,
-        types.sumFlags(SliderFlags, config.flags),
+        gui.sumFlags(SliderFlags, config.flags),
     );
 }
 
@@ -57,7 +57,7 @@ pub fn float3(label: CStr, v: *[3]f32, config: SliderConfig) bool {
         config.min,
         config.max,
         config.format.ptr,
-        types.sumFlags(SliderFlags, config.flags),
+        gui.sumFlags(SliderFlags, config.flags),
     );
 }
 
@@ -69,7 +69,7 @@ pub fn float4(label: CStr, v: *[4]f32, config: SliderConfig) bool {
         config.min,
         config.max,
         config.format.ptr,
-        types.sumFlags(SliderFlags, config.flags),
+        gui.sumFlags(SliderFlags, config.flags),
     );
 }
 
@@ -101,11 +101,11 @@ pub const ColorEditFlags = enum(c_int) {
 };
 
 pub fn color3(label: CStr, value: *[3]f32, flags: []const ColorEditFlags) bool {
-    return c.igColorEdit3(label.ptr, value, types.sumFlags(ColorEditFlags, flags));
+    return c.igColorEdit3(label.ptr, value, gui.sumFlags(ColorEditFlags, flags));
 }
 
-pub fn color4(label: CStr, value: *[3]f32, flags: []const ColorEditFlags) bool {
-    return c.igColorEdit3(label.ptr, value, types.sumFlags(ColorEditFlags, flags));
+pub fn color4(label: CStr, value: *[4]f32, flags: []const ColorEditFlags) bool {
+    return c.igColorEdit3(label.ptr, value, gui.sumFlags(ColorEditFlags, flags));
 }
 
 pub fn text(comptime buflen: usize, comptime format: []const u8, args: anytype) void {

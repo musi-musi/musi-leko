@@ -33,8 +33,6 @@ pub fn main() !void {
     try session_renderer.init(allocator);
     defer session_renderer.deinit();
 
-    
-
     window.setMouseMode(.hidden_raw);
     while (window.update()) {
         if (window.keyWasPressed(.escape)) {
@@ -53,6 +51,7 @@ pub fn main() !void {
             gui.newFrame();
             gui.showStats();
             // gui.showDemo();
+            session_renderer.materialEditorWindow();
             gui.render();
         }
     }

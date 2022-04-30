@@ -4,6 +4,7 @@ const client = @import("../../.zig");
 const gl = client.gl;
 const nm = client.nm;
 const window = client.window;
+const gui = client.gui;
 
 const engine = @import("../../../engine/.zig");
 const leko = engine.leko;
@@ -13,6 +14,8 @@ const rendering = @import("../.zig");
 const Camera = rendering.Camera;
 
 const deferred = rendering.deferred;
+
+const material = rendering.material;
 
 const leko_renderer = rendering.leko_renderer;
 
@@ -27,6 +30,23 @@ const VolumeModelManager = leko_renderer.VolumeModelManager;
 var _model: VolumeModel = undefined;
 var _model_manager: VolumeModelManager = undefined;
 var _deferred_pass: deferred.Pass = undefined;
+
+var _pattern: material.Pattern = .{
+    .warp_uv_scale = nm.Vec2.one,
+    .warp_amount = nm.Vec2.zero,
+    .noise_uv_scale = nm.Vec2.one,
+};
+
+var _pallete: material.Pallete = .{
+    .color0 = nm.Vec4.init(.{0.5, 0.5, 0.5, 1.0}),
+    .color1 = nm.Vec4.init(.{1.0, 1.0, 1.0, 1.0}),
+    .color_dark = nm.Vec4.init(.{0.0, 0.0, 0.0, 1.0}),
+};
+
+var _material_window: gui.Window = .{
+    .title = "material",
+    .flags = &.{.always_auto_resize},
+};
 
 pub fn init(allocator: Allocator) !void {
     try volume_model.init();
@@ -60,6 +80,8 @@ pub fn render() void {
     };
     camera.calculatePerspective(window.width(), window.height());
     _deferred_pass.setCamera(camera);
+    _deferred_pass.setMaterialPattern(_pattern);
+    _deferred_pass.setMaterialPallete(_pallete);
     if (_deferred_pass.begin()) {
         defer _deferred_pass.finish();
 
@@ -79,4 +101,13 @@ pub fn projectionMatrix() nm.Mat4 {
     const fov_rad: f32 = std.math.pi / 180.0 * 90.0;
     const aspect = @intToFloat(f32, width) / @intToFloat(f32, height);
     return nm.transform.createPerspective(fov_rad, aspect, 0.01, 1000);
+}
+
+
+pub fn materialEditorWindow() void {
+    if (_material_window.begin()) {
+        defer _material_window.end();
+        _ = material.patternEditor(&_pattern, "pattern");
+        _ = material.palleteEditor(&_pallete, "pallete");
+    }
 }
