@@ -34,8 +34,8 @@ pub fn Texture(comptime target_: TextureTarget, comptime format_: PixelFormat) t
             c.glDeleteTextures(1, &self.handle);
         }
 
-        pub fn bind(self: Self, unit: c_uint) void {
-            c.glBindTextureUnit(unit, self.handle);
+        pub fn bind(self: Self, unit: i32) void {
+            c.glBindTextureUnit(@intCast(c_uint, unit), self.handle);
         }
 
         pub fn setFilter(self: Self, min_filter: TextureFilter, mag_filter: TextureFilter) void {

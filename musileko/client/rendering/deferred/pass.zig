@@ -140,22 +140,27 @@ pub const Pass = struct {
     pub fn finish(self: Self) void {
         gl.bindDefaultFramebuffer();
         gl.disableDepthTest();
-        
-        self.noise_texture.bind(1);
-        self.shader.uniforms.set("tex_noise", 1);
 
-        self.buffer.textures.color.bind(2);
-        self.shader.uniforms.set("g_color", 2);
-        self.buffer.textures.outline.bind(3);
-        self.shader.uniforms.set("g_outline", 3);
-        self.buffer.textures.position.bind(4);
-        self.shader.uniforms.set("g_position", 4);
-        self.buffer.textures.normal.bind(5);
-        self.shader.uniforms.set("g_normal", 5);
-        self.buffer.textures.uv.bind(6);
-        self.shader.uniforms.set("g_uv", 6);
-        self.buffer.textures.lighting.bind(7);
-        self.shader.uniforms.set("g_lighting", 7);
+        const TU = rendering.TextureUnit;
+        
+        self.noise_texture.bind(TU.noise_array.int());
+        self.shader.uniforms.set("tex_noise", TU.noise_array.int());
+
+
+        const g_buffer_start = TU.g_buffer_start.int();
+
+        self.buffer.textures.color.bind(g_buffer_start + 0);
+        self.shader.uniforms.set("g_color", g_buffer_start + 0);
+        self.buffer.textures.outline.bind(g_buffer_start + 1);
+        self.shader.uniforms.set("g_outline", g_buffer_start + 1);
+        self.buffer.textures.position.bind(g_buffer_start + 2);
+        self.shader.uniforms.set("g_position", g_buffer_start + 2);
+        self.buffer.textures.normal.bind(g_buffer_start + 3);
+        self.shader.uniforms.set("g_normal", g_buffer_start + 3);
+        self.buffer.textures.uv.bind(g_buffer_start + 4);
+        self.shader.uniforms.set("g_uv", g_buffer_start + 4);
+        self.buffer.textures.lighting.bind(g_buffer_start + 5);
+        self.shader.uniforms.set("g_lighting", g_buffer_start + 5);
         self.shader.use();
         self.screen_mesh.startDraw();
         self.screen_mesh.draw();
