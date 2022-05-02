@@ -15,6 +15,7 @@ pub const material = struct {
         warp_uv_scale: Vec2,
         warp_amount: Vec2,
         noise_uv_scale: Vec2,
+        color_bands: f32,
     };
 
     pub const Pallete = struct {
@@ -33,6 +34,7 @@ pub const material = struct {
         dirty = gui.float2("warp scale", &pattern.warp_uv_scale.v, slider_config) or dirty;
         dirty = gui.float2("warp amount", &pattern.warp_amount.v, slider_config) or dirty;
         dirty = gui.float2("noise scale", &pattern.noise_uv_scale.v, slider_config) or dirty;
+        dirty = gui.float("bands", &pattern.color_bands, .{.speed = 0.1}) or dirty;
         return dirty;
     }
     pub fn palleteEditor(pallete: *Pallete, name: []const u8) bool {

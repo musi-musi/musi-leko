@@ -3,6 +3,7 @@ const std = @import("std");
 const client = @import("../../.zig");
 const gl = client.gl;
 const nm = client.nm;
+const gui = client.gui;
 
 const rendering = @import("../.zig");
 
@@ -28,6 +29,7 @@ pub const Pass = struct {
             gl.uniform("screen_size", .vec2),
 
             gl.uniform("light_direction", .vec3),
+            gl.uniform("ao_bands", .float),
 
             gl.uniform("view", .mat4),
             gl.uniform("proj", .mat4),
@@ -37,6 +39,7 @@ pub const Pass = struct {
             gl.uniform("warp_uv_scale", .vec2),
             gl.uniform("warp_amount", .vec2),
             gl.uniform("noise_uv_scale", .vec2),
+            gl.uniform("color_bands", .float),
 
             gl.uniform("pallete_a", .vec4),
             gl.uniform("pallete_b", .vec4),
@@ -111,10 +114,15 @@ pub const Pass = struct {
         self.shader.uniforms.set("proj", camera.proj.v);
     }
 
+    pub fn setProperties(self: Self, properties: PassProperties) void {
+        self.shader.uniforms.set("ao_bands", properties.ao_bands);
+    }
+
     pub fn setMaterialPattern(self: Self, pattern: rendering.material.Pattern) void {
         self.shader.uniforms.set("warp_uv_scale", pattern.warp_uv_scale.v);
         self.shader.uniforms.set("warp_amount", pattern.warp_amount.v);
         self.shader.uniforms.set("noise_uv_scale", pattern.noise_uv_scale.v);
+        self.shader.uniforms.set("color_bands", pattern.color_bands);
     }
 
     pub fn setMaterialPallete(self: Self, pallete: rendering.material.Pallete) void {
@@ -168,7 +176,20 @@ pub const Pass = struct {
         // self.buffer.blitDepth(0); // produces GL_INVALID_OPERATION because the default depth buffer is not f32
     }
 
+
 };
+
+pub const PassProperties = struct {
+    ao_bands: f32,
+
+};
+
+pub fn passPropertiesEditor(properties: *PassProperties, name: []const u8) bool {
+    var dirty: bool = false;
+    gui.text(64, "{s}", .{name});
+    dirty = gui.float("ao bands", &properties.ao_bands, .{.speed = 0.1}) or dirty;
+    return dirty;
+}
 
 pub const ScreenMesh = struct {
 

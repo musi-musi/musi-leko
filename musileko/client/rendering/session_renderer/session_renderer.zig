@@ -35,6 +35,7 @@ var _pattern: material.Pattern = .{
     .warp_uv_scale = nm.Vec2.one,
     .warp_amount = nm.Vec2.init(.{0, 1}),
     .noise_uv_scale = nm.Vec2.init(.{0.5, 2}),
+    .color_bands = 3,
 };
 
 var _pallete: material.Pallete = .{
@@ -46,6 +47,10 @@ var _pallete: material.Pallete = .{
 var _material_window: gui.Window = .{
     .title = "material",
     .flags = &.{.always_auto_resize},
+};
+
+var _pass_properties: deferred.PassProperties = .{
+    .ao_bands = 3,
 };
 
 pub fn init(allocator: Allocator) !void {
@@ -80,6 +85,7 @@ pub fn render() void {
     };
     camera.calculatePerspective(window.width(), window.height());
     _deferred_pass.setCamera(camera);
+    _deferred_pass.setProperties(_pass_properties);
     _deferred_pass.setMaterialPattern(_pattern);
     _deferred_pass.setMaterialPallete(_pallete);
     if (_deferred_pass.begin()) {
@@ -107,6 +113,7 @@ pub fn projectionMatrix() nm.Mat4 {
 pub fn materialEditorWindow() void {
     if (_material_window.begin()) {
         defer _material_window.end();
+        _ = deferred.passPropertiesEditor(&_pass_properties, "pass");
         _ = material.patternEditor(&_pattern, "pattern");
         _ = material.palleteEditor(&_pallete, "pallete");
     }

@@ -21,8 +21,10 @@ uniform float fog_start = 1.5;
 uniform float fog_end = 3.75;
 
 uniform vec3 light_direction;
-uniform float light_strength = 0.5;
-uniform float ao_strength = 0.5;
+uniform float light_strength = 0.35;
+uniform float ao_strength = 0.4;
+
+uniform float ao_bands;
 
 #define UV_SCALE (1.0/32.0)
 #define WARP_SCALE 0.001
@@ -31,6 +33,7 @@ uniform sampler2D tex_noise;
 uniform vec2 warp_uv_scale = vec2(1);
 uniform vec2 warp_amount = vec2(0, 1);
 uniform vec2 noise_uv_scale = vec2(0.5, 2);
+uniform float color_bands;
 
 uniform vec4 pallete_a = vec4(0.27, 0.20, 0.30, 1);
 uniform vec4 pallete_b = vec4(0.35, 0.25, 0.32, 1);
@@ -38,27 +41,32 @@ uniform vec4 pallete_dark = vec4(0.07, 0.03, 0.1, 1);
 
 out vec4 out_color;
 
-#define BANDS(x, bands) (floor(x * bands) / bands)
+#define BANDS(x, bands) (floor((x * (1 + (1 / bands))) * bands) / bands)
 
 vec4 calcMaterial(float light_level) {
     vec2 uv = texture2D(g_uv, frag_uv).xy * UV_SCALE;
     vec2 warp = texture2D(tex_noise, uv * warp_uv_scale).xy * warp_amount * WARP_SCALE;
     float noise = texture2D(tex_noise, uv * noise_uv_scale + warp).x;
     noise = (noise + 1) / 2;
-    vec4 color = mix(pallete_a, pallete_b, BANDS(noise, 3));
+    vec4 color = mix(pallete_a, pallete_b, BANDS(noise, color_bands));
     color = mix(pallete_dark, color, light_level);
     return color;
 }
 
 float calcLight() {
-    
     vec2 lighting = texture2D(g_lighting, frag_uv).xy;
+    float ao = lighting.y;
+    ao = BANDS(ao, ao_bands);
+    ao = mix(1, ao, ao_strength);
+    return clamp(ao * 1.01, 0, 1);
+}
+
+float calcSun() {
     vec3 normal = texture2D(g_normal, frag_uv).xyz;
 
     float dir_light = abs(dot(normal, light_direction));
     dir_light = mix(1, dir_light, light_strength);
-    float ao = mix(1, lighting.y, ao_strength);
-    return dir_light * ao;
+    return dir_light;
 }
 
 vec4 calcEdge() {
@@ -137,9 +145,10 @@ void main() {
         }
         vec4 outline = calcOutline();
         float light = calcLight();
+        float sun = calcSun();
         float fog = calcFog(position.xyz);
         vec3 color = calcMaterial(light).xyz;
-        color = mix(color, vec3(0), fog);
+        color = mix(color * sun, vec3(0), fog);
         out_color.xyz = mix(color, outline.xyz, outline.w);
     }
 }
