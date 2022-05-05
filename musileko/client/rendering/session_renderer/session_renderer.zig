@@ -50,6 +50,10 @@ var _material_window: gui.Window = .{
 };
 
 var _pass_properties: deferred.PassProperties = .{
+    .fog_falloff = 5,
+    .fog_start = 1.5,
+    .fog_end = 3.75,
+    .fog_color = nm.Vec4.init(.{0.1, 0, 0.1, 1}),
     .ao_bands = 3,
 };
 
@@ -75,7 +79,7 @@ pub fn deinit() void {
 }
 
 pub fn render() void {
-    gl.clearColor(.{0, 0, 0, 1});
+    gl.clearColor(_pass_properties.fog_color.v);
     gl.clearDepth(.float, 1);
     gl.clear(.color_depth);
     _model_manager.uploadGeneratedMeshes();

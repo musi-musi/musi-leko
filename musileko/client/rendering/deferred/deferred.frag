@@ -19,6 +19,7 @@ uniform mat4 view;
 uniform float fog_falloff = 5;
 uniform float fog_start = 1.5;
 uniform float fog_end = 3.75;
+uniform vec4 fog_color;
 
 uniform vec3 light_direction;
 uniform float light_strength = 0.35;
@@ -42,6 +43,7 @@ uniform vec4 pallete_dark = vec4(0.07, 0.03, 0.1, 1);
 out vec4 out_color;
 
 #define BANDS(x, bands) (floor((x * (1 + (1 / bands))) * bands) / bands)
+// #define BANDS(x, bands) (floor(x * bands) / bands)
 
 vec4 calcMaterial(float light_level) {
     vec2 uv = texture2D(g_uv, frag_uv).xy * UV_SCALE;
@@ -148,7 +150,7 @@ void main() {
         float sun = calcSun();
         float fog = calcFog(position.xyz);
         vec3 color = calcMaterial(light).xyz;
-        color = mix(color * sun, vec3(0), fog);
+        color = mix(color * sun, fog_color.xyz, fog);
         out_color.xyz = mix(color, outline.xyz, outline.w);
     }
 }

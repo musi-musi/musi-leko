@@ -50,7 +50,7 @@ pub fn main() !void {
             session_renderer.render();
             gui.newFrame();
             gui.showStats();
-            // gui.showDemo();
+            gui.showDemo();
             session_renderer.materialEditorWindow();
             gui.render();
         }

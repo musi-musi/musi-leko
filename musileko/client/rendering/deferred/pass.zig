@@ -11,6 +11,8 @@ const deferred = @import(".zig");
 
 const GBuffer = deferred.GBuffer;
 
+const Vec4 = nm.Vec4;
+
 pub const Pass = struct {
 
     buffer: GBuffer,
@@ -33,6 +35,11 @@ pub const Pass = struct {
 
             gl.uniform("view", .mat4),
             gl.uniform("proj", .mat4),
+
+            gl.uniform("fog_falloff", .float),
+            gl.uniform("fog_start", .float),
+            gl.uniform("fog_end", .float),
+            gl.uniform("fog_color", .vec4),
 
             gl.uniformTextureUnit("tex_noise"),
             
@@ -115,6 +122,10 @@ pub const Pass = struct {
     }
 
     pub fn setProperties(self: Self, properties: PassProperties) void {
+        self.shader.uniforms.set("fog_falloff", properties.fog_falloff);
+        self.shader.uniforms.set("fog_start", properties.fog_start);
+        self.shader.uniforms.set("fog_end", properties.fog_end);
+        self.shader.uniforms.set("fog_color", properties.fog_color.v);
         self.shader.uniforms.set("ao_bands", properties.ao_bands);
     }
 
@@ -180,6 +191,10 @@ pub const Pass = struct {
 };
 
 pub const PassProperties = struct {
+    fog_falloff: f32,
+    fog_start: f32,
+    fog_end: f32,
+    fog_color: Vec4,
     ao_bands: f32,
 
 };
@@ -187,6 +202,10 @@ pub const PassProperties = struct {
 pub fn passPropertiesEditor(properties: *PassProperties, name: []const u8) bool {
     var dirty: bool = false;
     gui.text(64, "{s}", .{name});
+    dirty = gui.float("fog falloff", &properties.fog_falloff, .{.speed = 0.1}) or dirty;
+    dirty = gui.float("fog start", &properties.fog_start, .{.speed = 0.1}) or dirty;
+    dirty = gui.float("fog end", &properties.fog_end, .{.speed = 0.1}) or dirty;
+    dirty = gui.color4("fog color", &properties.fog_color.v, &.{}) or dirty;
     dirty = gui.float("ao bands", &properties.ao_bands, .{.speed = 0.1}) or dirty;
     return dirty;
 }
