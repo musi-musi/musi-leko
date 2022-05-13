@@ -36,9 +36,9 @@ uniform vec2 warp_amount = vec2(0, 1);
 uniform vec2 noise_uv_scale = vec2(0.5, 2);
 uniform float color_bands;
 
-uniform vec4 pallete_a = vec4(0.27, 0.20, 0.30, 1);
-uniform vec4 pallete_b = vec4(0.35, 0.25, 0.32, 1);
-uniform vec4 pallete_dark = vec4(0.07, 0.03, 0.1, 1);
+uniform vec4 color0 = vec4(0.27, 0.20, 0.30, 1);
+uniform vec4 color1 = vec4(0.35, 0.25, 0.32, 1);
+uniform vec4 color_dark = vec4(0.07, 0.03, 0.1, 1);
 
 out vec4 out_color;
 
@@ -50,8 +50,8 @@ vec4 calcMaterial(float light_level) {
     vec2 warp = texture2D(tex_noise, uv * warp_uv_scale).xy * warp_amount * WARP_SCALE;
     float noise = texture2D(tex_noise, uv * noise_uv_scale + warp).x;
     noise = (noise + 1) / 2;
-    vec4 color = mix(pallete_a, pallete_b, BANDS(noise, color_bands));
-    color = mix(pallete_dark, color, light_level);
+    vec4 color = mix(color0, color1, BANDS(noise, color_bands));
+    color = mix(color_dark, color, light_level);
     return color;
 }
 

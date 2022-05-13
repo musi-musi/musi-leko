@@ -48,18 +48,7 @@ pub const chunk_mesh = struct {
         base: gl.BufferBind(QuadBase, .{.divisor = 1}),
     }, .uint);
 
-    const Shader = rendering.Shader(&.{
-            gl.uniform("proj", .mat4),
-            gl.uniform("view", .mat4),
-
-            gl.uniform("chunk_position", .vec3i),
-
-            gl.uniform("player_selection_position", .vec3i),
-            gl.uniform("player_selection_face", .int),
-
-            gl.uniform("near_plane", .float),
-            gl.uniform("far_plane", .float),
-        },
+    const Shader = rendering.Shader(
         @embedFile("chunk_mesh.vert"),
         @embedFile("chunk_mesh.frag"),
         &.{MeshData.createShaderHeader()},
@@ -82,8 +71,6 @@ pub const chunk_mesh = struct {
     pub fn setCamera(camera: rendering.Camera) void {
         _shader.uniforms.set("view", camera.view.v);
         _shader.uniforms.set("proj", camera.proj.v);
-        _shader.uniforms.set("near_plane", camera.near_plane);
-        _shader.uniforms.set("far_plane", camera.far_plane);
     }
 
     pub fn setPlayerSelection(selection: ?leko.RaycastHit) void {
@@ -160,6 +147,7 @@ pub const ChunkMesh = struct {
     }
 
     pub fn generateData(self: *Self, allocator: Allocator, parts: Parts) !void {
+        @setRuntimeSafety(false);
         switch (parts) {
             .middle => {
                 try self.data.generateMiddle(allocator, self.chunk);

@@ -51,7 +51,7 @@ pub fn main() !void {
             gui.newFrame();
             gui.showStats();
             gui.showDemo();
-            session_renderer.materialEditorWindow();
+            // session_renderer.materialEditorWindow();
             gui.render();
         }
     }

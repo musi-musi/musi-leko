@@ -131,6 +131,15 @@ pub fn ProgramUniforms(comptime uniforms_: []const Uniform) type {
             @compileError("no such uniform \"" ++ name ++ "\"");
         }
 
+        pub fn hasUniform(comptime name: []const u8) bool {
+            for (uniforms) |uni| {
+                if (std.mem.eql(u8, name, uni.name)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         pub fn Value(comptime name: []const u8) type {
             return uniforms[indexOf(name)].uniform_type.Type();
         }
@@ -156,15 +165,29 @@ pub fn ProgramUniforms(comptime uniforms_: []const Uniform) type {
                 .mat4 => c.glProgramUniformMatrix4fv(self.program, location, count, transpose, ptr),
                 
                 .int => c.glProgramUniform1iv(self.program, location, count, ptr),
-                .vec2i => c.glProgramUniform2iv(self.program, location, count, ptr),
-                .vec3i => c.glProgramUniform3iv(self.program, location, count, ptr),
-                .vec4i => c.glProgramUniform4iv(self.program, location, count, ptr),
+                .ivec2 => c.glProgramUniform2iv(self.program, location, count, ptr),
+                .ivec3 => c.glProgramUniform3iv(self.program, location, count, ptr),
+                .ivec4 => c.glProgramUniform4iv(self.program, location, count, ptr),
 
                 .uint => c.glProgramUniform1uiv(self.program, location, count, ptr),
-                .vec2ui => c.glProgramUniform2uiv(self.program, location, count, ptr),
-                .vec3ui => c.glProgramUniform3uiv(self.program, location, count, ptr),
-                .vec4ui => c.glProgramUniform4uiv(self.program, location, count, ptr),
+                .uivec2 => c.glProgramUniform2uiv(self.program, location, count, ptr),
+                .uivec3 => c.glProgramUniform3uiv(self.program, location, count, ptr),
+                .uivec4 => c.glProgramUniform4uiv(self.program, location, count, ptr),
 
+            }
+        }
+
+        pub fn setMultiple(self: Self, value: anytype) void {
+            const V = @TypeOf(value);
+            switch (@typeInfo(V)) {
+                .Struct => |str| {
+                    inline for (str.fields) |field| {
+                        if (comptime hasUniform(field.name)) {
+                            self.set(field.name, @bitCast(Value(field.name), @field(value, field.name)));
+                        }
+                    }
+                },
+                else => @compileError("value must be a struct"),
             }
         }
 
@@ -249,14 +272,14 @@ pub const UniformType = struct {
             .mat4 => [4][4]f32,
             
             .int => i32,
-            .vec2i => [2]i32,
-            .vec3i => [3]i32,
-            .vec4i => [4]i32,
+            .ivec2 => [2]i32,
+            .ivec3 => [3]i32,
+            .ivec4 => [4]i32,
             
             .uint => u32,
-            .vec2ui => [2]u32,
-            .vec3ui => [3]u32,
-            .vec4ui => [4]u32,
+            .uivec2 => [2]u32,
+            .uivec3 => [3]u32,
+            .uivec4 => [4]u32,
         };
         if (self.count) |count| {
             return [count]PrimitiveType;
@@ -278,15 +301,15 @@ pub const UniformType = struct {
                 => *const f32,
             
             .int,
-            .vec2i,
-            .vec3i,
-            .vec4i,
+            .ivec2,
+            .ivec3,
+            .ivec4,
                 => *const i32,
             
             .uint,
-            .vec2ui,
-            .vec3ui,
-            .vec4ui,
+            .uivec2,
+            .uivec3,
+            .uivec4,
                 => *const u32,
         };
     }
@@ -300,14 +323,14 @@ pub const UniformType = struct {
         vec4,
 
         int,
-        vec2i,
-        vec3i,
-        vec4i,
+        ivec2,
+        ivec3,
+        ivec4,
         
         uint,
-        vec2ui,
-        vec3ui,
-        vec4ui,
+        uivec2,
+        uivec3,
+        uivec4,
         
         mat2,
         mat3,

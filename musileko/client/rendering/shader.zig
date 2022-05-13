@@ -6,7 +6,7 @@ const gl = client.gl;
 
 const fmt = std.fmt;
 
-pub fn Shader(comptime uniforms_: []const gl.Uniform, comptime vert_source_: [:0]const u8, comptime frag_source_: [:0]const u8, comptime headers_: []const [:0]const u8) type {
+pub fn Shader(comptime vert_source_: [:0]const u8, comptime frag_source_: [:0]const u8, comptime headers_: []const [:0]const u8) type {
     comptime {
 
         var headers_source_list: [:0]const u8 = fmt.comptimePrint("#version {d}{d}0 core\n", .{gl.config.version_major, gl.config.version_minor});
@@ -23,7 +23,7 @@ pub fn Shader(comptime uniforms_: []const gl.Uniform, comptime vert_source_: [:0
             frag_stage: gl.FragmentStage,
             uniforms: Uniforms,
 
-            pub const Uniforms = gl.ProgramUniforms(uniforms_);
+            pub const Uniforms = gl.ProgramUniforms(parseUniforms(headers_source_list ++ vert_source ++ frag_source));
 
             const Self = @This();
 
@@ -43,6 +43,11 @@ pub fn Shader(comptime uniforms_: []const gl.Uniform, comptime vert_source_: [:0
                 self.program.attach(.fragment, self.frag_stage);
                 try self.program.link();
                 self.uniforms = Uniforms.init(self.program.handle);
+                // const parsed_uniforms = comptime parseUniforms(headers_source_list ++ vert_source ++ frag_source);
+                // std.log.debug("==============================", .{});
+                // for (parsed_uniforms) |pu| {
+                //     std.log.debug("{s}: {s}", .{pu.name, @tagName(pu.uniform_type.primitive)});
+                // }
                 return self;
             }
 
@@ -62,4 +67,42 @@ pub fn Shader(comptime uniforms_: []const gl.Uniform, comptime vert_source_: [:0
 
     }
 
+}
+
+const mem = std.mem;
+fn parseUniforms(comptime source: []const u8) []const gl.Uniform {
+    comptime {
+        @setEvalBranchQuota(1_000_000);
+        var uniforms: []const gl.Uniform = &.{};
+        var lines = mem.tokenize(u8, source, "\n\r");
+        while (lines.next()) |line| {
+            if (parseUniform(line)) |uniform| {
+                uniforms = uniforms ++ [1]gl.Uniform{uniform};
+            }
+        }
+        return uniforms;
+    }
+}
+
+fn parseUniform(comptime line: []const u8) ?gl.Uniform {
+    var tokens = mem.tokenize(u8, line, " \t;");
+    if (tokens.next()) |first| {
+        if (!mem.eql(u8, first, "uniform")) {
+            return null;
+        }
+        if (tokens.next()) |type_name| {
+            if (tokens.next()) |name| {
+                if (mem.eql(u8, "sampler2D", type_name)) {
+                    return gl.uniformTextureUnit(name);
+                }
+                const Primitive = gl.UniformType.Primitive;
+                for (std.enums.values(Primitive)) |primitive| {
+                    if (mem.eql(u8, @tagName(primitive), type_name)) {
+                        return gl.uniform(name, primitive);
+                    }
+                }
+            }
+        }
+    }
+    return null;
 }

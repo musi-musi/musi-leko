@@ -20,38 +20,7 @@ pub const Pass = struct {
     shader: Shader,
     noise_texture: NoiseTexture,
 
-    const Shader = rendering.Shader(&.{
-            gl.uniformTextureUnit("g_color"),
-            gl.uniformTextureUnit("g_outline"),
-            gl.uniformTextureUnit("g_position"),
-            gl.uniformTextureUnit("g_normal"),
-            gl.uniformTextureUnit("g_uv"),
-            gl.uniformTextureUnit("g_lighting"),
-
-            gl.uniform("screen_size", .vec2),
-
-            gl.uniform("light_direction", .vec3),
-            gl.uniform("ao_bands", .float),
-
-            gl.uniform("view", .mat4),
-            gl.uniform("proj", .mat4),
-
-            gl.uniform("fog_falloff", .float),
-            gl.uniform("fog_start", .float),
-            gl.uniform("fog_end", .float),
-            gl.uniform("fog_color", .vec4),
-
-            gl.uniformTextureUnit("tex_noise"),
-            
-            gl.uniform("warp_uv_scale", .vec2),
-            gl.uniform("warp_amount", .vec2),
-            gl.uniform("noise_uv_scale", .vec2),
-            gl.uniform("color_bands", .float),
-
-            gl.uniform("pallete_a", .vec4),
-            gl.uniform("pallete_b", .vec4),
-            gl.uniform("pallete_dark", .vec4),
-        },
+    const Shader = rendering.Shader(
         @embedFile("deferred.vert"),
         @embedFile("deferred.frag"),
         &.{},
@@ -117,29 +86,19 @@ pub const Pass = struct {
     }
 
     pub fn setCamera(self: Self, camera: rendering.Camera) void {
-        self.shader.uniforms.set("view", camera.view.v);
-        self.shader.uniforms.set("proj", camera.proj.v);
+        self.shader.uniforms.setMultiple(camera);
     }
 
     pub fn setProperties(self: Self, properties: PassProperties) void {
-        self.shader.uniforms.set("fog_falloff", properties.fog_falloff);
-        self.shader.uniforms.set("fog_start", properties.fog_start);
-        self.shader.uniforms.set("fog_end", properties.fog_end);
-        self.shader.uniforms.set("fog_color", properties.fog_color.v);
-        self.shader.uniforms.set("ao_bands", properties.ao_bands);
+        self.shader.uniforms.setMultiple(properties);
     }
 
     pub fn setMaterialPattern(self: Self, pattern: rendering.material.Pattern) void {
-        self.shader.uniforms.set("warp_uv_scale", pattern.warp_uv_scale.v);
-        self.shader.uniforms.set("warp_amount", pattern.warp_amount.v);
-        self.shader.uniforms.set("noise_uv_scale", pattern.noise_uv_scale.v);
-        self.shader.uniforms.set("color_bands", pattern.color_bands);
+        self.shader.uniforms.setMultiple(pattern);
     }
 
     pub fn setMaterialPallete(self: Self, pallete: rendering.material.Pallete) void {
-        self.shader.uniforms.set("pallete_a", pallete.color0.v);
-        self.shader.uniforms.set("pallete_b", pallete.color1.v);
-        self.shader.uniforms.set("pallete_dark", pallete.color_dark.v);
+        self.shader.uniforms.setMultiple(pallete);
     }
 
     pub fn begin(self: *Self) bool {

@@ -5,9 +5,6 @@ uniform mat4 view;
 
 uniform ivec3 chunk_position;
 
-uniform float near_plane;
-uniform float float_plane;
-
 uniform float fog_falloff = 5;
 uniform float fog_start = 1.5;
 uniform float fog_end = 3.75;

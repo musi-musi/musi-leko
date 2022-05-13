@@ -134,6 +134,7 @@ pub const VolumeManager = struct {
     }
 
     fn processLoadCenterChanged(thread: *ChunkLoadThread, new_center: Vec3i, _:usize) !void {
+        @setRuntimeSafety(false);
         const self = @fieldParentPtr(Self, "load_thread", thread);
         self.load_center = new_center;
         const load_min = new_center.sub(Vec3i.fill(@intCast(i32, self.load_radius)));
@@ -211,6 +212,7 @@ pub const VolumeManager = struct {
     }
 
     fn processLoadChunk(group: *ChunkThreadGroup, chunk: *Chunk, _: usize) !void {
+        @setRuntimeSafety(false);
         const self = @fieldParentPtr(Self, "load_thread_group", group);
         const perlin = nm.noise.Perlin3{};
         const scale: f32 = 0.025;
