@@ -103,11 +103,11 @@ pub const chunk_mesh = struct {
 
 pub const ChunkMesh = struct {
 
-    chunk: *Chunk,
-    base_buffer: QuadBaseBuffer,
-    data: MeshData,
+    chunk: *Chunk = undefined,
+    base_buffer: QuadBaseBuffer = undefined,
+    data: MeshData = undefined,
     quad_count: usize = 0,
-    state: State = .inactive,
+    state: State = .unitialized,
     mutex: std.Thread.Mutex = .{},
     has_uploaded: bool = false,
 
@@ -116,6 +116,7 @@ pub const ChunkMesh = struct {
     const Self = @This();
 
     pub const State = enum {
+        unitialized,
         inactive,
         generating,
         active,
@@ -132,10 +133,12 @@ pub const ChunkMesh = struct {
             .chunk = chunk,
             .base_buffer = QuadBaseBuffer.init(),
             .data = MeshData.init(),
+            .state = .inactive,
         };
     }
 
     pub fn deinit(self: *Self, allocator: Allocator) void  {
+        self.state = .unitialized;
         defer self.base_buffer.deinit();
         defer self.data.deinit(allocator);
     }

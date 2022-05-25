@@ -27,7 +27,7 @@ pub fn LinkedListAtomicQueue(comptime T: type) type {
         tail: ?*Node = null,
         node_pool: NodePool = undefined,
 
-        const NodePool = util.Pool(Node);
+        const NodePool = util.Pool(Node, .{});
 
         const Node = struct {
             next: ?*Node = null,
@@ -52,6 +52,9 @@ pub fn LinkedListAtomicQueue(comptime T: type) type {
         pub fn enqueue(self: *Self, item: T) !void {
             self.mutex.lock();
             defer self.mutex.unlock();
+            if (self.node_pool.isEmpty()) {
+                std.log.debug("{s} queue pool: {d} total items allocated", .{@typeName(T), (self.node_pool.slabs.items.len + 1) * NodePool.slab_size});
+            }
             const node = try self.node_pool.checkOutOrAlloc();
             node.* = .{
                 .item = item,

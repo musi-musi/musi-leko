@@ -70,7 +70,7 @@ pub const VolumeModel = struct {
     mutex: Mutex,
 
     pub const ChunkMeshes = leko.ChunkPosHashMap(*ChunkMesh);
-    pub const ChunkMeshPool = util.Pool(ChunkMesh);
+    pub const ChunkMeshPool = util.InitPool(ChunkMesh, .{}, .{});
 
     const Self = @This();
 
@@ -86,7 +86,6 @@ pub const VolumeModel = struct {
         var meshes = self.meshes.valueIterator();
         while (meshes.next()) |mesh| {
             mesh.*.deinit(self.allocator);
-            self.mesh_pool.checkIn(mesh.*);
         }
         self.meshes.deinit();
         self.mesh_pool.deinit();
@@ -98,15 +97,13 @@ pub const VolumeModel = struct {
             return existing;
         }
         else {
-            var mesh: *ChunkMesh = undefined;
-            if (self.mesh_pool.checkOut()) |m| {
-                mesh = m;
-                mesh.clear();
-                mesh.chunk = chunk;
+            var mesh: *ChunkMesh = try self.mesh_pool.checkOutOrAlloc();
+            if (mesh.state == .unitialized) {
+                mesh.init(chunk);
             }
             else {
-                mesh = try self.mesh_pool.alloc();
-                mesh.init(chunk);
+                mesh.clear();
+                mesh.chunk = chunk;
             }
             try self.meshes.put(position, mesh);
             return mesh;

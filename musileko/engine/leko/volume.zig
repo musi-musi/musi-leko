@@ -22,7 +22,9 @@ pub const Volume = struct {
 
     pub const Chunks = ChunkPosHashMap(*Chunk);
 
-    pub const ChunkPool = util.Pool(Chunk);
+    pub const ChunkPool = util.Pool(Chunk, .{
+        .slab_size = 8,     // chunks are very large, so we use a smaller slab size to avoid wasting memory
+    });
 
     const Self = @This();
 
@@ -36,7 +38,6 @@ pub const Volume = struct {
         var chunks = self.chunks.valueIterator();
         while (chunks.next()) |chunk| {
             chunk.*.deinit();
-            self.chunk_pool.checkIn(chunk.*);
         }
         self.chunks.deinit();
         self.chunk_pool.deinit();
