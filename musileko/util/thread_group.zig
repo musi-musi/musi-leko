@@ -56,6 +56,7 @@ pub fn ThreadGroup(comptime Item_: type) type {
         }
 
         pub fn deinit(self: *Self, allocator: Allocator) void {
+            self.item_queue.deinit();
             allocator.free(self.threads);
         }
 

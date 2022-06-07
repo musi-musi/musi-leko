@@ -19,6 +19,7 @@ pub const Volume = struct {
     allocator: Allocator,
     chunks: Chunks,
     chunk_pool: ChunkPool,
+    mutex: std.Thread.Mutex,
 
     pub const Chunks = ChunkPosHashMap(*Chunk);
 
@@ -32,6 +33,7 @@ pub const Volume = struct {
         self.allocator = allocator;
         self.chunks = Chunks.init(allocator);
         try self.chunk_pool.init(allocator, initial_chunk_capacity);
+        self.mutex = .{};
     }
 
     pub fn deinit(self: *Self) void {

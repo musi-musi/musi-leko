@@ -143,14 +143,14 @@ pub const ChunkMesh = struct {
         defer self.data.deinit(allocator);
     }
 
-    pub fn clear(self: *Self) void {
+    pub fn clear(self: *Self, allocator: Allocator) void {
         self.quad_count = 0;
         self.has_uploaded = false;
-        self.data.clear();
+        self.data.clear(allocator);
     }
 
     pub fn generateData(self: *Self, allocator: Allocator, parts: Parts) !void {
-        @setRuntimeSafety(false);
+        // @setRuntimeSafety(false);
         switch (parts) {
             .middle => {
                 try self.data.generateMiddle(allocator, self.chunk);
@@ -210,9 +210,9 @@ pub const MeshData = struct {
         self.base_border.deinit(allocator);
     }
 
-    pub fn clear(self: *Self) void {
-        self.base_middle.shrinkRetainingCapacity(0);
-        self.base_border.shrinkRetainingCapacity(0);
+    pub fn clear(self: *Self, allocator: Allocator) void {
+        self.deinit(allocator);
+        self.* = init();
     }
 
     pub fn generateMiddle(self: *Self, allocator: Allocator, chunk: *Chunk) !void {

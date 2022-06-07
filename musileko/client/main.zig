@@ -9,6 +9,7 @@ const window = client.window;
 const rendering = client.rendering;
 const gui = client.gui;
 const session = musileko.engine.session;
+const util = client.util;
 
 const session_renderer = rendering.session_renderer;
 
@@ -25,7 +26,9 @@ pub fn main() !void {
     defer gui.deinit();
 
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const allocator = gpa.allocator();
+    var ta = util.TrackingAllocator.init(gpa.allocator());
+    defer _ = ta.deinit();
+    const allocator = ta.allocator();
     
     try session.init(allocator);
     defer session.deinit();

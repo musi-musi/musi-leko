@@ -79,7 +79,9 @@ pub const VolumeManager = struct {
             .loaded_chunk_queue = try ChunkAtomicQueue.init(allocator),
             .load_queue = try ChunkLoadQueue.init(allocator),
         };
+        self.loaded_chunk_queue.log_allocations = true;
         try self.load_thread_group.init(allocator, config.load_group_config, processLoadChunk);
+        // self.load_thread_group.item_queue.log_allocations = true;
         try self.load_thread_group.spawn(.{});
         try self.load_thread.init(allocator, .{ .thread_count = .{ .count = 1, }}, processLoadCenterChanged);
         try self.load_thread.spawn(.{});
@@ -100,6 +102,8 @@ pub const VolumeManager = struct {
     }
 
     pub fn update(self: *Self, load_center: Vec3) !void {
+        // self.volume.mutex.lock();
+        // defer self.volume.mutex.unlock();
         const chunk_center = comptime Vec3.fill(@intToFloat(f32, Chunk.width / 2));
         const chunk_width = @intToFloat(f32, Chunk.width);
         const new_center: Vec3i = (
@@ -112,12 +116,15 @@ pub const VolumeManager = struct {
             try self.load_thread.submitItem(new_center);
         }
         // self.chunks_mutex.lock();
+        var load_items = std.ArrayListUnmanaged(*Chunk){};
+        defer load_items.deinit(self.allocator);
         while (self.load_queue.dequeue()) |load| {
             switch (load.state) {
                 .loading => {
                     const chunk = try self.volume.activateChunk(load.chunk_position);
                     chunk.state = .loading;
-                    try self.load_thread_group.submitItem(chunk);
+                    // try self.load_thread_group.submitItem(chunk);
+                    try load_items.append(self.allocator, chunk);
                 },
                 .unloading => {
                     if (self.volume.chunks.get(load.chunk_position)) |chunk| {
@@ -127,6 +134,8 @@ pub const VolumeManager = struct {
                 },
             }
         }
+        try self.load_thread_group.submitItems(load_items.items);
+        // std.log.debug("load_thread_group enqueue ({d} count)", .{self.load_thread_group.item_queue.count});
         // self.chunks_mutex.unlock();
         while (self.loaded_chunk_queue.dequeue()) |chunk| {
             try self.event_chunk_loaded.dispatch(chunk);
@@ -136,6 +145,8 @@ pub const VolumeManager = struct {
     fn processLoadCenterChanged(thread: *ChunkLoadThread, new_center: Vec3i, _:usize) !void {
         @setRuntimeSafety(false);
         const self = @fieldParentPtr(Self, "load_thread", thread);
+        // self.volume.mutex.lock();
+        // defer self.volume.mutex.unlock();
         self.load_center = new_center;
         const load_min = new_center.sub(Vec3i.fill(@intCast(i32, self.load_radius)));
         const load_max = new_center.add(Vec3i.fill(@intCast(i32, self.load_radius)));
@@ -214,6 +225,7 @@ pub const VolumeManager = struct {
     fn processLoadChunk(group: *ChunkThreadGroup, chunk: *Chunk, _: usize) !void {
         @setRuntimeSafety(false);
         const self = @fieldParentPtr(Self, "load_thread_group", group);
+        // std.log.debug("load_thread_group dequeue ({d} count)", .{group.item_queue.count});
         const perlin = nm.noise.Perlin3{};
         const scale: f32 = 0.025;
 
@@ -252,6 +264,8 @@ pub const VolumeManager = struct {
     }
 
     pub fn requestSingleEdit(self: *Self, reference: Reference, new_id: LekoId) !void {
+        self.volume.mutex.lock();
+        defer self.volume.mutex.unlock();
         const old_id = reference.chunk.id_array.get(reference.address);
         const edit = LekoEdit {
             .reference = reference,

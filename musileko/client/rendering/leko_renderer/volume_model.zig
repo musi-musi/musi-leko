@@ -97,14 +97,24 @@ pub const VolumeModel = struct {
             return existing;
         }
         else {
-            var mesh: *ChunkMesh = try self.mesh_pool.checkOutOrAlloc();
-            if (mesh.state == .unitialized) {
-                mesh.init(chunk);
-            }
-            else {
-                mesh.clear();
+            var mesh: *ChunkMesh = undefined;
+            if (self.mesh_pool.checkOut()) |m| {
+                mesh = m;
+                mesh.clear(self.allocator);
                 mesh.chunk = chunk;
             }
+            else {
+                mesh = try self.mesh_pool.alloc();
+                mesh.init(chunk);
+            }
+            // var mesh: *ChunkMesh = try self.mesh_pool.checkOutOrAlloc();
+            // if (mesh.state == .unitialized) {
+            //     mesh.init(chunk);
+            // }
+            // else {
+            //     mesh.clear();
+            //     mesh.chunk = chunk;
+            // }
             try self.meshes.put(position, mesh);
             return mesh;
         }
@@ -113,6 +123,7 @@ pub const VolumeModel = struct {
     fn deactivateChunkMesh(self: *Self, position: Vec3i) void {
         if (self.meshes.get(position)) |mesh| {
             mesh.*.state = .inactive;
+            mesh.clear(self.allocator);
             _ = self.meshes.remove(position);
             self.mesh_pool.checkIn(mesh);
         }
@@ -168,6 +179,9 @@ pub const VolumeModelManager = struct {
     pub fn deinit(self: *Self) void {
         self.generate_thread_group.join();
         self.generate_thread_group.deinit(self.allocator);
+        while (self.mesh_upload_queue.dequeue()) |meshes| {
+            self.allocator.free(meshes);
+        }
         self.mesh_upload_queue.deinit();
     }
 
@@ -229,6 +243,7 @@ pub const VolumeModelManager = struct {
     fn processGenerateMesh(group: *ChunkMeshGenerateThreadGroup, jobs: []ChunkMeshGenerateJob, _: usize) !void {
         const self = @fieldParentPtr(Self, "generate_thread_group", group);
         var upload_list = try self.allocator.alloc(*ChunkMesh, jobs.len);
+        defer self.allocator.free(jobs);
         for (jobs) |job, i| {
             job.mesh.*.mutex.lock();
             defer job.mesh.*.mutex.unlock();
@@ -237,7 +252,6 @@ pub const VolumeModelManager = struct {
             job.mesh.*.state = .active;
             upload_list[i] = job.mesh;
         }
-        self.allocator.free(jobs);
         try self.*.mesh_upload_queue.enqueue(upload_list);
     }
 
