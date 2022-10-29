@@ -19,7 +19,8 @@ pub fn main() !void {
     try window.init(.{});
     defer window.deinit();
     
-    window.setVsyncMode(.disabled);
+    window.setVsyncMode(.enabled);
+    // window.setVsyncMode(.disabled);
 
     try gui.init();
     defer gui.deinit();
@@ -50,8 +51,8 @@ pub fn main() !void {
             session_renderer.render();
             gui.newFrame();
             gui.showStats();
-            gui.showDemo();
-            // session_renderer.materialEditorWindow();
+            // gui.showDemo();
+            session_renderer.materialEditorWindow();
             gui.render();
         }
     }
